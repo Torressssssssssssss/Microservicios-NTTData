@@ -21,6 +21,12 @@ public class TacoOrder implements Serializable {
 
   private User user;
 
+  // Las ordenes previas sin estado se consideran CREATED en el servicio.
+  private Status status = Status.CREATED;
+
+  public enum Status { CREATED, PREPARING, READY, DELIVERED, CANCELLED }
+
+
   private String deliveryName;
 
   private String deliveryStreet;

@@ -1,9 +1,10 @@
 package tacos.web.api;
 
-import java.net.URI;
+import javax.servlet.http.HttpServletRequest;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.server.ResponseStatusException;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -23,7 +24,7 @@ import tacos.data.IngredientRepository;
 
 @RestController
 @RequestMapping(path="/api/ingredients", produces="application/json")
-@CrossOrigin(origins="http://localhost:8080")
+@CrossOrigin(origins="${taco.api.allowed-origin}")
 public class IngredientController {
 
   private IngredientRepository repo;
@@ -40,31 +41,47 @@ public class IngredientController {
 
   @GetMapping("/{id}")
   public Mono<Ingredient> byId(@PathVariable String id) {
-    return repo.findById(id);
+    return repo.findById(id).switchIfEmpty(Mono.error(
+        new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingredient not found")));
   }
 
-  @PutMapping("/{id}")
-  public void updateIngredient(@PathVariable String id, @RequestBody Ingredient ingredient) {
-    if (!ingredient.getId().equals(id)) {
-      throw new IllegalStateException("Given ingredient's ID doesn't match the ID in the path.");
-    }
-    repo.save(ingredient);
+  @PutMapping(path="/{id}", consumes="application/json")
+  public Mono<ResponseEntity<Ingredient>> updateIngredient(
+      @PathVariable String id, @RequestBody Ingredient ingredient) {
+    return Mono.defer(() -> {
+      validate(ingredient);
+      if (!id.equals(ingredient.getId())) {
+        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Inconsistent ingredient ID"));
+      }
+      // La escritura solo se ejecuta cuando el framework suscribe la cadena.
+      return repo.findById(id)
+          .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingredient not found")))
+          .flatMap(existing -> repo.save(ingredient))
+          .map(ResponseEntity::ok);
+    });
   }
 
-  @PostMapping
-  public Mono<ResponseEntity<Ingredient>> postIngredient(@RequestBody Mono<Ingredient> ingredient) {
-    return ingredient
-        .flatMap(repo::save)
-        .map(i -> {
-          HttpHeaders headers = new HttpHeaders();
-          headers.setLocation(URI.create("http://localhost:8080/ingredients/" + i.getId()));
-          return new ResponseEntity<Ingredient>(i, headers, HttpStatus.CREATED);
-        });
+  @PostMapping(consumes="application/json")
+  public Mono<ResponseEntity<Ingredient>> postIngredient(
+      @RequestBody Ingredient ingredient, HttpServletRequest request) {
+    ServletUriComponentsBuilder location = ServletUriComponentsBuilder.fromRequestUri(request);
+    return Mono.defer(() -> {
+      validate(ingredient);
+      return repo.save(ingredient).map(saved -> ResponseEntity.created(
+          location.cloneBuilder().pathSegment(saved.getId()).build().encode().toUri()).body(saved));
+    });
   }
 
   @DeleteMapping("/{id}")
-  public void deleteIngredient(@PathVariable String id) {
-    repo.deleteById(id);
+  public Mono<ResponseEntity<Void>> deleteIngredient(@PathVariable String id) {
+    return Mono.defer(() -> repo.findById(id))
+        .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Ingredient not found")))
+        .flatMap(existing -> repo.deleteById(id).thenReturn(ResponseEntity.noContent().build()));
   }
 
+  private void validate(Ingredient ingredient) {
+    if (ingredient.getName() == null || ingredient.getName().trim().isEmpty() || ingredient.getType() == null) {
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name and type are required");
+    }
+  }
 }

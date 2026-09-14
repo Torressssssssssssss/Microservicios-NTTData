@@ -1,0 +1,445 @@
+DOCUMENTACION DE RETOS FUNCIONALES TACOCLOUD: TC-01 A TC-05
+Fecha: 2026-09-14
+Carpeta: /home/torres/NTT/Microservicios-NTTData
+
+ALCANCE GENERAL
+
+Se implementan los cinco primeros retos del documento
+TacoCloud_Retos_Funcionales_Estudiantes.docx. El documento se utiliza como
+especificacion del curso. Los retos posteriores no forman parte del cambio.
+Todos los comentarios agregados y este documento estan sin tildes y sin emojis.
+No se modifican las operaciones de correo ni de publicacion: TC-06 y TC-07.
+No se crean commits ni se descartan cambios del usuario.
+
+INDICE DE TAREAS
+
+Tarea 1: TC-01: ACTUALIZACION REACTIVA DE INGREDIENTES
+Tarea 2: TC-02: ELIMINACION REACTIVA DE INGREDIENTES
+Tarea 3: TC-03: LOCATION BASADO EN LA PETICION
+Tarea 4: TC-04: PATCH CONTROLADO DE ORDENES
+Tarea 5: TC-05: IDENTIDAD, REEMPLAZO Y ELIMINACION DE ORDENES
+
+Cada tarea incluye problema, solucion, contrato, archivos, pruebas, comando,
+ejemplo HTTP y resultado. Los archivos compartidos aparecen en cada tarea
+que los utiliza. La prueba de ADMIN y orden antigua participa en TC-04/TC-05.
+
+==============================================================================
+TAREA 1 - TC-01: ACTUALIZACION REACTIVA DE INGREDIENTES
+==============================================================================
+
+Problema original:
+El PUT devolvia void y descartaba repo.save(). Un publisher reactivo describe
+una operacion; descartar el publisher no ejecuta la escritura. Una diferencia
+entre ID de ruta y cuerpo producia una excepcion interna, no un error 400.
+
+Solucion:
+PUT /api/ingredients/{id} devuelve Mono<ResponseEntity<Ingredient>>.
+Mono.defer aplaza validacion y acceso al repositorio hasta la suscripcion.
+Se exige que el ID del cuerpo coincida con la ruta, incluyendo rechazo de ID
+nulo. Nombre no vacio y tipo son obligatorios. Se consulta existencia antes de
+guardar. La escritura pertenece al flatMap de la cadena que recibe Spring.
+
+Contrato:
+200: ingrediente actualizado en el cuerpo JSON.
+400: identidad inconsistente, nombre vacio, tipo ausente o JSON invalido.
+404: ingrediente inexistente; no se guarda ni se crea un documento.
+No se agregan block(), subscribe() ni metodos void para ejecutar esta operacion.
+
+Pruebas:
+Estados 200/400/404 mediante MockMvc y despacho asincrono del Mono.
+StepVerifier comprueba emision y finalizacion.
+Una escritura simulada con Mono.defer comprueba ausencia de efecto antes de la
+suscripcion, ejecucion posterior y una sola invocacion de save.
+La prueba de integracion comprueba el cambio por GET contra MongoDB real.
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+- tacocloud/tacocloud-api/src/main/java/tacos/web/api/IngredientController.java
+- tacocloud/tacocloud-api/pom.xml
+- tacocloud/tacocloud-api/src/test/java/tacos/web/api/FunctionalChallengesTest.java
+- tacocloud/tacocloud-api/src/test/java/tacos/web/api/integration/IngredientMongoIT.java
+
+Pruebas automatizadas de esta tarea:
+- ingredientPutIsLazyAndCompletes
+- ingredientPutHttpContracts
+
+Comando para ejecutar las pruebas de esta tarea con Java 21:
+mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am clean test "-Dtest=FunctionalChallengesTest#ingredientPutIsLazyAndCompletes+ingredientPutHttpContracts" -Dsurefire.failIfNoSpecifiedTests=false -Dlombok.version=1.18.36 -Dbyte-buddy.version=1.14.19
+
+Ejemplo HTTP de esta tarea:
+Ajustar host, puerto e identificadores. Utilizar solo datos sinteticos.
+
+Actualizar:
+curl -i -X PUT http://localhost:8080/api/ingredients/TEST-WRAP -H 'Content-Type: application/json' -d '{"id":"TEST-WRAP","name":"Tortilla actualizada","type":"WRAP"}'
+Esperado: 200. GET posterior muestra el nombre actualizado.
+
+Resultado y pendientes de esta tarea:
+Las pruebas rapidas indicadas pasaron en la ejecucion final de la suite.
+La prueba compartida IngredientMongoIT cubre esta tarea con persistencia
+real, pero no pudo iniciar: Docker no esta disponible en este equipo.
+La regresion que descarta el publisher de save fallo como se esperaba: el
+efecto de escritura no ocurre aunque termine la cadena de respuesta.
+
+==============================================================================
+TAREA 2 - TC-02: ELIMINACION REACTIVA DE INGREDIENTES
+==============================================================================
+
+Problema original:
+El DELETE era void y descartaba repo.deleteById(), por lo que no garantizaba
+el efecto ni diferenciaba recursos ausentes.
+
+Solucion:
+DELETE /api/ingredients/{id} devuelve Mono<ResponseEntity<Void>>.
+Busqueda, error de ausencia y eliminacion estan encadenados. thenReturn genera
+la respuesta solo al finalizar deleteById. No hay try/catch sincronico.
+GET por ID tambien devuelve 404 si falta el ingrediente, para que se pueda
+observar la desaparicion y seguir el contrato de los retos.
+
+Contrato:
+204 sin cuerpo cuando termina la eliminacion.
+404 si el ID no existe, incluyendo una segunda eliminacion del mismo ID.
+La operacion es idempotente: repetirla no cambia el efecto final, aunque el
+estado HTTP de la segunda respuesta sea diferente.
+
+Pruebas:
+El repositorio simulado cambia un indicador de presencia al suscribirse.
+Se verifica 204, cuerpo vacio, efecto terminado, GET posterior 404, segundo
+DELETE 404 y exactamente una eliminacion. ID ausente no invoca deleteById.
+Se agrega tambien una prueba de persistencia real en IngredientMongoIT.
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+- tacocloud/tacocloud-api/src/main/java/tacos/web/api/IngredientController.java
+- tacocloud/tacocloud-api/src/test/java/tacos/web/api/FunctionalChallengesTest.java
+- tacocloud/tacocloud-api/src/test/java/tacos/web/api/integration/IngredientMongoIT.java
+
+Pruebas automatizadas de esta tarea:
+- ingredientDeleteWaitsForEffectAndSecondCallIs404
+
+Comando para ejecutar las pruebas de esta tarea con Java 21:
+mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am clean test "-Dtest=FunctionalChallengesTest#ingredientDeleteWaitsForEffectAndSecondCallIs404" -Dsurefire.failIfNoSpecifiedTests=false -Dlombok.version=1.18.36 -Dbyte-buddy.version=1.14.19
+
+Ejemplo HTTP de esta tarea:
+Ajustar host, puerto e identificadores. Utilizar solo datos sinteticos.
+
+Eliminar:
+curl -i -X DELETE http://localhost:8080/api/ingredients/TEST-WRAP
+Esperado: 204; segundo DELETE y GET responden 404.
+
+Resultado y pendientes de esta tarea:
+Las pruebas rapidas indicadas pasaron en la ejecucion final de la suite.
+La prueba compartida IngredientMongoIT cubre esta tarea con persistencia
+real, pero no pudo iniciar: Docker no esta disponible en este equipo.
+
+==============================================================================
+TAREA 3 - TC-03: LOCATION BASADO EN LA PETICION
+==============================================================================
+
+Problema original:
+El POST construia http://localhost:8080/ingredients/{id}; faltaba /api y se
+fijaban host, puerto y esquema independientemente de la peticion.
+
+Solucion:
+POST /api/ingredients recibe Ingredient y HttpServletRequest en el runtime
+Spring MVC del proyecto. ServletUriComponentsBuilder.fromRequestUri captura
+la URI antes de entrar en la cadena reactiva. Tras guardar, pathSegment agrega
+el ID realmente devuelto por persistencia y encode protege segmentos de URI.
+No se concatena un URL completo ni se utiliza el ID anterior a persistencia.
+Se valida nombre y tipo antes de guardar. Se responde 201 con cuerpo y Location.
+El controlador ya no contiene la referencia literal localhost:8080.
+
+CORS:
+El origen permitido se mueve a taco.api.allowed-origin en los application.yml
+del modulo API y de la aplicacion. El valor inicial conserva el origen del
+proyecto: http://localhost:8080. No se abre CORS para cualquier origen.
+
+Proxy:
+En despliegue detras de un proxy confiable, utilizar
+--server.forward-headers-strategy=framework
+para que Spring procese Forwarded/X-Forwarded-* antes de construir Location.
+El proxy debe controlar esos encabezados. No se habilita confianza global en
+encabezados de clientes directos como parte de este cambio.
+
+Pruebas:
+URI con HTTPS, host distinto, puerto 9443 y context path /course.
+ID asignado por persistencia distinto del de entrada y GET siguiendo Location.
+Encabezados X-Forwarded-Host, X-Forwarded-Proto y X-Forwarded-Prefix mediante
+ForwardedHeaderFilter en MockMvc.
+Body invalido produce 400 sin escritura.
+La prueba de integracion utiliza servidor MVC con puerto aleatorio y /course.
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+- tacocloud/tacocloud-api/src/main/java/tacos/web/api/IngredientController.java
+- tacocloud/tacocloud-api/src/main/resources/application.yml
+- tacocloud/tacocloud/src/main/resources/application.yml
+- tacocloud/tacocloud-api/src/test/java/tacos/web/api/FunctionalChallengesTest.java
+- tacocloud/tacocloud-api/src/test/java/tacos/web/api/integration/IngredientMongoIT.java
+
+Pruebas automatizadas de esta tarea:
+- locationUsesRequestAndPersistedId
+- locationSupportsForwardedHeaders
+
+Comando para ejecutar las pruebas de esta tarea con Java 21:
+mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am clean test "-Dtest=FunctionalChallengesTest#locationUsesRequestAndPersistedId+locationSupportsForwardedHeaders" -Dsurefire.failIfNoSpecifiedTests=false -Dlombok.version=1.18.36 -Dbyte-buddy.version=1.14.19
+
+Ejemplo HTTP de esta tarea:
+Ajustar host, puerto e identificadores. Utilizar solo datos sinteticos.
+
+Crear ingrediente:
+curl -i -X POST http://localhost:8080/api/ingredients -H 'Content-Type: application/json' -d '{"id":"TEST-WRAP","name":"Tortilla prueba","type":"WRAP"}'
+Esperado: 201 y Location hacia /api/ingredients/TEST-WRAP.
+
+Resultado y pendientes de esta tarea:
+Las pruebas rapidas indicadas pasaron en la ejecucion final de la suite.
+La prueba compartida IngredientMongoIT cubre esta tarea con persistencia
+real, pero no pudo iniciar: Docker no esta disponible en este equipo.
+
+==============================================================================
+TAREA 4 - TC-04: PATCH CONTROLADO DE ORDENES
+==============================================================================
+
+Problema original:
+Se recibia TacoOrder completo, se permitia cambiar pago, faltaba autorizacion
+y deliveryZip se tomaba incorrectamente de deliveryState.
+
+Solucion:
+PATCH /api/orders/{orderId} recibe OrderPatchRequest, no TacoOrder.
+Lista blanca: deliveryName, deliveryStreet, deliveryCity, deliveryState,
+deliveryZip. Los campos omitidos o nulos no se modifican. No hay reflection
+ni copia masiva de propiedades. JsonAnySetter rechaza campos desconocidos,
+incluso si su valor es null: no hay descarte silencioso de campos protegidos.
+OrderService consulta, autoriza, aplica los campos explicitamente, valida el
+resultado y realiza una unica escritura. ZIP se copia de deliveryZip.
+Los cinco datos de entrega resultantes deben ser no nulos y no vacios.
+
+Autorizacion:
+Authentication debe estar autenticado y no ser AnonymousAuthenticationToken.
+Solo el propietario identificado por username o una autoridad ROLE_ADMIN
+puede modificar la orden. No se acepta userId ni usuario en el body.
+Ordenes sin propietario solo pueden modificarse por ADMIN.
+
+Contrato:
+200: orden actualizada.
+400: campo prohibido, JSON invalido o datos de entrega resultantes vacios.
+403: usuario ajeno o peticion sin identidad autenticada.
+404: orden ausente. Se mantiene la busqueda antes de la comprobacion de acceso.
+
+Pruebas:
+ZIP y estado se modifican independientemente.
+Rechazo de id, user, placedAt, total, status, ccNumber, ccExpiration, ccCVV,
+tacos, incluyendo null. Validacion de ZIP vacio.
+Propietario, usuario ajeno, ausencia de autenticacion, ADMIN y recurso ausente.
+Se verifica ausencia de save en rechazos y una escritura por cambio valido.
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+- tacocloud/tacocloud-api/src/main/java/tacos/web/api/OrderApiController.java
+- tacocloud/tacocloud-api/src/main/java/tacos/web/api/OrderPatchRequest.java
+- tacocloud/tacocloud-api/src/main/java/tacos/web/api/OrderService.java
+- tacocloud/tacocloud-api/src/test/java/tacos/web/api/FunctionalChallengesTest.java
+
+Pruebas automatizadas de esta tarea:
+- patchZipAndStateAreIndependent
+- patchRejectsProtectedFieldsAndInvalidResults
+- patchChecksOwnershipAndExistence
+- adminCanPatchAndDeleteLegacyOrder
+
+Comando para ejecutar las pruebas de esta tarea con Java 21:
+mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am clean test "-Dtest=FunctionalChallengesTest#patchZipAndStateAreIndependent+patchRejectsProtectedFieldsAndInvalidResults+patchChecksOwnershipAndExistence+adminCanPatchAndDeleteLegacyOrder" -Dsurefire.failIfNoSpecifiedTests=false -Dlombok.version=1.18.36 -Dbyte-buddy.version=1.14.19
+
+Ejemplo HTTP de esta tarea:
+Ajustar host, puerto e identificadores. Utilizar solo datos sinteticos.
+
+PATCH de orden del usuario autenticado:
+curl -i -u "$TACO_USER:$TACO_PASSWORD" -X PATCH http://localhost:8080/api/orders/ORDER_ID -H 'Content-Type: application/json' -d '{"deliveryZip":"54321"}'
+Esperado: 200 si es propietario; deliveryState se conserva.
+No utilizar credenciales reales en archivos del repositorio ni en evidencias.
+
+Resultado y pendientes de esta tarea:
+Las pruebas rapidas indicadas pasaron en la ejecucion final de la suite.
+El replay original detecto ZIP incorrecto, campos protegidos aceptados y
+acceso ajeno permitido. La asignacion real de roles queda para TC-11.
+
+==============================================================================
+TAREA 5 - TC-05: IDENTIDAD, REEMPLAZO Y ELIMINACION DE ORDENES
+==============================================================================
+
+Problema original:
+El PUT ignoraba el orderId de la ruta y guardaba el dominio del cuerpo.
+El DELETE descartaba el publisher y usaba try/catch para una operacion asincrona.
+No habia comprobaciones de propietario ni estado de la orden.
+
+Solucion de PUT:
+PUT /api/orders/{orderId} recibe OrderReplaceRequest con @Valid.
+El ID opcional del cuerpo debe coincidir con la ruta cuando se proporciona.
+Un ID omitido utiliza la identidad de la ruta. La orden debe existir.
+Solo se reemplazan los cinco datos de entrega y la lista de tacos.
+Se requieren datos de entrega no vacios y lista de tacos no vacia; se validan
+las restricciones existentes de Taco mediante @Valid.
+Se conservan ID, usuario, placedAt, status y los tres datos de pago existentes.
+Campos protegidos o desconocidos producen 400, no se copian a persistencia.
+Se exige propietario o ROLE_ADMIN igual que en PATCH.
+200 al guardar; 400 por entrada invalida; 403 por acceso ajeno; 404 por ausencia.
+PUT no crea ordenes nuevas. No se calcula precio ni se incorpora TC-14.
+
+Solucion de DELETE:
+DELETE /api/orders/{orderId} compone busqueda, autorizacion y deleteById.
+Devuelve 204 sin cuerpo solo al terminar el efecto; 403 por acceso ajeno,
+404 por ausencia y 409 cuando el estado no permite eliminacion fisica.
+
+Estado minimo necesario:
+TacoOrder agrega Status con CREATED, PREPARING, READY, DELIVERED y CANCELLED.
+Las ordenes nuevas inician en CREATED. Las antiguas con estado null se tratan
+como CREATED para esta comprobacion, sin exigir migracion inmediata.
+Solo CREATED/null admite eliminacion fisica, incluso para ADMIN.
+PREPARING, READY, DELIVERED y CANCELLED producen 409. No se implementa aun el
+workflow de estados ni cancelacion distribuida: corresponden a TC-25.
+Los DTOs de PUT/PATCH no permiten que el cliente cambie este estado.
+
+Pruebas:
+ID contradictorio, ausencia, usuario ajeno, reemplazo valido y preservacion de
+identidad, usuario, fecha, estado y pago. Rechazo de pago y body incompleto.
+DELETE ausente, ajeno, anonimo, PREPARING/READY/DELIVERED/CANCELLED con propietario y ADMIN, CREATED con
+204 tras el efecto y orden antigua sin estado con ADMIN.
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+- tacocloud/tacocloud-api/src/main/java/tacos/web/api/OrderApiController.java
+- tacocloud/tacocloud-api/src/main/java/tacos/web/api/OrderReplaceRequest.java
+- tacocloud/tacocloud-api/src/main/java/tacos/web/api/OrderService.java
+- tacocloud/tacocloud-domain-mongodb/src/main/java/tacos/TacoOrder.java
+- tacocloud/tacocloud-api/src/test/java/tacos/web/api/FunctionalChallengesTest.java
+
+Pruebas automatizadas de esta tarea:
+- putPreservesProtectedValuesAndRejectsRedirect
+- putRejectsPaymentAndInvalidDelivery
+- deleteChecksOwnershipStateAndCompletion
+- adminCanPatchAndDeleteLegacyOrder
+
+Comando para ejecutar las pruebas de esta tarea con Java 21:
+mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am clean test "-Dtest=FunctionalChallengesTest#putPreservesProtectedValuesAndRejectsRedirect+putRejectsPaymentAndInvalidDelivery+deleteChecksOwnershipStateAndCompletion+adminCanPatchAndDeleteLegacyOrder" -Dsurefire.failIfNoSpecifiedTests=false -Dlombok.version=1.18.36 -Dbyte-buddy.version=1.14.19
+
+Ejemplo HTTP de esta tarea:
+Ajustar host, puerto e identificadores. Utilizar solo datos sinteticos.
+
+PUT de orden del usuario autenticado:
+curl -i -u "$TACO_USER:$TACO_PASSWORD" -X PUT http://localhost:8080/api/orders/ORDER_ID -H 'Content-Type: application/json' -d '{"id":"ORDER_ID","deliveryName":"Cliente prueba","deliveryStreet":"Calle prueba","deliveryCity":"Ciudad","deliveryState":"ST","deliveryZip":"12345","tacos":[{"name":"Taco prueba","ingredients":[{"id":"TEST-WRAP","name":"Tortilla prueba","type":"WRAP"}]}]}'
+Esperado: 200 si existe y pertenece al usuario; pago y fecha se conservan.
+
+Eliminar orden:
+curl -i -u "$TACO_USER:$TACO_PASSWORD" -X DELETE http://localhost:8080/api/orders/ORDER_ID
+Esperado: 204 si es propietario y CREATED; 409 si esta en PREPARING.
+
+Resultado y pendientes de esta tarea:
+Las pruebas rapidas indicadas pasaron en la ejecucion final de la suite.
+El replay original detecto DELETE sin contrato de ausencia y PUT con body
+Mono incompatible con MVC. El workflow completo queda para TC-25.
+
+==============================================================================
+CONFIGURACION Y VALIDACION COMPARTIDAS
+==============================================================================
+
+Dependencias comunes de pruebas:
+reactor-test para StepVerifier;
+Testcontainers mongodb y junit-jupiter 1.16.3 para Mongo real sin instalarlo.
+El perfil integration incorpora maven-failsafe-plugin para ejecutar *IT.
+Las pruebas rapidas no necesitan MongoDB, Docker ni brokers locales.
+
+COMANDOS REPRODUCIBLES
+
+Ejecutar desde /home/torres/NTT/Microservicios-NTTData.
+
+Con JDK 11, compatible con el proyecto base:
+mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am clean test
+
+En este equipo, con Java 21:
+mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am clean test -Dlombok.version=1.18.36 -Dbyte-buddy.version=1.14.19
+
+Solo un subconjunto:
+mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am test -Dtest=FunctionalChallengesTest -Dsurefire.failIfNoSpecifiedTests=false -Dlombok.version=1.18.36 -Dbyte-buddy.version=1.14.19
+
+Pruebas rapidas mas integracion MongoDB con Docker disponible:
+mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am verify -Pintegration -Dlombok.version=1.18.36 -Dbyte-buddy.version=1.14.19
+
+Los overrides de Lombok y Byte Buddy son solo argumentos de ejecucion.
+No se cambia Spring Boot 2.5.3, su API ni la version de Java del repositorio.
+El build inicial sin overrides fallo con Java 21 por NoSuchFieldError en
+JCTree$JCImport al usar el Lombok original. No es un defecto de estos retos.
+
+LIMITES Y DECISIONES
+
+La configuracion general de seguridad sigue siendo la del baseline, con rutas
+permitAll y contrasenas sin proteccion adaptativa. TC-10 y TC-11 quedan fuera
+del alcance. El servicio protege PUT/PATCH/DELETE aun con esas rutas abiertas:
+sin Authentication valido responde 403. POST, GET y correo conservan su contrato
+original y deben endurecerse en los retos posteriores.
+User del baseline solo concede ROLE_USER. La rama ADMIN del servicio soporta
+ROLE_ADMIN y se verifica con una identidad de prueba; asignar roles reales
+corresponde al trabajo posterior de seguridad.
+POST original no asigna automaticamente un propietario. Para pruebas manuales
+de ordenes debe existir una orden con user consistente; si user falta, el
+servicio no concede acceso como propietario.
+PUT/PATCH siguen devolviendo TacoOrder del baseline. No se resuelve todavia la
+exposicion de datos sensibles del dominio: corresponde a TC-08 y TC-12. No usar
+PAN/CVV reales. Las pruebas solo emplean valores sinteticos.
+Busqueda y escritura no son una transaccion atomica. No se agrega optimistic
+locking ni workflow: una carrera concurrente entre estado y eliminacion debe
+resolverse al evolucionar TC-25. Este cambio verifica el estado observado.
+La compatibilidad de ordenes antiguas sin estado supone que eran CREATED; en
+una migracion productiva se debe revisar esa suposicion.
+No se afirma que pasen los navegadores Angular, los brokers ni todo el reactor
+Maven: la validacion ejecutada se centra en API y sus modulos dependientes.
+
+REFERENCIAS CONSULTADAS
+
+Especificacion: TacoCloud_Retos_Funcionales_Estudiantes.docx, fichas TC-01 a TC-05.
+Project Reactor 3.4.8, Mono: defer, flatMap, switchIfEmpty y thenReturn.
+https://projectreactor.io/docs/core/3.4.8/api/reactor/core/publisher/Mono.html
+Spring Framework 5.3, URI y encabezados forwarded en el runtime Servlet.
+https://docs.spring.io/spring-framework/docs/5.3.13/reference/pdf/web.pdf
+
+RESULTADOS DE EJECUCION
+
+Validacion final: Maven clean test del API y sus dependencias, Java 21 con
+los overrides documentados: BUILD SUCCESS.
+14 pruebas ejecutadas: 12 nuevas en FunctionalChallengesTest y 2 existentes en
+TacoControllerTest. Cero fallos, cero errores y cero pruebas omitidas.
+Los seis modulos del reactor seleccionado compilan correctamente.
+
+Replay del baseline historico:
+Se cargaron temporalmente los dos controladores originales desde HEAD y se
+adaptaron exclusivamente el constructor del fixture y la prueba que dependia
+del nuevo tipo de retorno. Se ejecutaron diez pruebas HTTP de los cinco retos.
+Resultado original: 10 pruebas, 5 fallos y 5 errores, cero omisiones.
+Se detectaron ZIP incorrecto, acceso ajeno permitido, campos protegidos aceptados,
+DELETE sin contrato 204/404, excepcion interna por IDs contradictorios y
+recepcion de Mono como body incompatible con Spring MVC en POST/PUT originales.
+Se restauraron los controladores y el fixture al terminar la comprobacion.
+
+Regresion de publisher descartado:
+Se sustituyo temporalmente el flatMap de save en el PUT de ingredientes por un
+map que invoca save y descarta su Mono. La prueba StepVerifier se ejecuto desde
+compilacion limpia: 1 prueba, 1 fallo, cero errores y cero omisiones.
+El indicador de escritura permanecio false pese a completar la respuesta.
+Se restauro la implementacion y se repitio clean test con las 14 pruebas pasando.
+Estas comprobaciones son replays posteriores, no se afirma que la suite existia
+antes de empezar a editar el proyecto.
+
+Integracion real:
+Se ejecuto verify -Pintegration. Las 14 pruebas rapidas pasaron y se intento
+IngredientMongoIT. Testcontainers fallo antes de iniciar MongoDB:
+IllegalStateException: Could not find a valid Docker environment.
+No se omite silenciosamente esta prueba ni se declara que MongoDB real fue
+validado. Se necesita Docker disponible para completar esa evidencia y el
+smoke test HTTP de persistencia real.
+
+No se instalo un JDK ni se modifico el sistema. La descarga temporal de JDK 11
+se interrumpio y se elimino; la validacion efectiva utilizo Java 21 con overrides.
+El comando con JDK 11 queda como ruta recomendada para el baseline, no como
+una ejecucion realizada en este equipo.
+
+Verificacion de formato:
+git diff --check sin errores. Los comentarios nuevos y documentacion.txt se
+comprobaron sin caracteres no ASCII, tildes ni emojis.
+
+Evidencias de ejecucion conservadas fuera del repositorio, en:
+/home/torres/Documents/Codex/2026-09-14/va/work/tacocloud-verificacion
+Archivos: baseline-build.log, baseline-regression.log,
+baseline-regression-report.txt, publisher-regression.log,
+publisher-regression-report.txt, integration.log y final-tests.log.
