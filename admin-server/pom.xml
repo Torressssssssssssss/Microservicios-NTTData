@@ -15,7 +15,7 @@
   <name>admin-server</name>
   <description>Hello Reactive Example</description>
   <properties>
-    <java.version>11</java.version>
+    <java.version>25</java.version>
     <spring-boot-admin.version>2.4.3</spring-boot-admin.version>
   </properties>
   <dependencies>
