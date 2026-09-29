@@ -70,10 +70,11 @@
 		<dependency>
 			<groupId>nz.net.ultraq.thymeleaf</groupId>
 			<artifactId>thymeleaf-layout-dialect</artifactId>
+			<version>3.4.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.thymeleaf.extras</groupId>
-			<artifactId>thymeleaf-extras-springsecurity5</artifactId>
+			<artifactId>thymeleaf-extras-springsecurity6</artifactId>
 		</dependency>
 
 		<!-- Test dependencies -->
@@ -85,11 +86,13 @@
 		<dependency>
 			<groupId>org.seleniumhq.selenium</groupId>
   		<artifactId>selenium-java</artifactId>
+			<version>3.141.59</version>
   		<scope>test</scope>
 		</dependency>
 		<dependency>
   		<groupId>org.seleniumhq.selenium</groupId>
   		<artifactId>htmlunit-driver</artifactId>
+			<version>2.49.1</version>
   		<scope>test</scope>
 		</dependency>
 

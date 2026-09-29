@@ -24,7 +24,7 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>25</java.version>
   <!-- tag::bootAdminVersion[] -->
-    <spring-boot-admin.version>2.4.3</spring-boot-admin.version>
+    <spring-boot-admin.version>3.5.6</spring-boot-admin.version>
   </properties>
   <!-- end::bootAdminVersion[] -->
 
@@ -93,18 +93,20 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <dependency>
       <groupId>org.seleniumhq.selenium</groupId>
       <artifactId>selenium-java</artifactId>
+      <version>3.141.59</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.seleniumhq.selenium</groupId>
       <artifactId>htmlunit-driver</artifactId>
+      <version>2.49.1</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>io.github.bonigarcia</groupId>
       <artifactId>webdrivermanager</artifactId>
-      <version>5.8.0</version>
+      <version>4.4.3</version>
       <scope>test</scope>
     </dependency>
 

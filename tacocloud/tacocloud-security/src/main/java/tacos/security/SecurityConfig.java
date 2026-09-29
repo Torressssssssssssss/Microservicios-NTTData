@@ -1,63 +1,34 @@
 package tacos.security;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation
-             .authentication.builders.AuthenticationManagerBuilder;
-import org.springframework.security.config.annotation.web
-             .builders.HttpSecurity;
-import org.springframework.security.config.annotation.web
-                        .configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web
-                        .configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 
-@SuppressWarnings("deprecation")
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
+public class SecurityConfig {
   
-  @Autowired
-  private UserDetailsService userDetailsService;
-  
-  @Override
-  protected void configure(HttpSecurity http) throws Exception {
+  @Bean
+  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
-      .authorizeRequests()
-        .antMatchers(HttpMethod.OPTIONS).permitAll() // needed for Angular/CORS
-        .antMatchers(HttpMethod.POST, "/api/ingredients").permitAll()
-        .antMatchers("/api/tacos/**", "/api/orders/**")
+      .authorizeHttpRequests(authorize -> authorize
+        .requestMatchers(HttpMethod.OPTIONS).permitAll()
+        .requestMatchers(HttpMethod.POST, "/api/ingredients").permitAll()
+        .requestMatchers("/api/tacos/**", "/api/orders/**")
             .permitAll()
-            //.access("hasRole('ROLE_USER')")
-        .antMatchers(HttpMethod.PATCH, "/api/ingredients").permitAll()
-        .antMatchers("/**").access("permitAll")
-        
-      .and()
-        .formLogin()
-          .loginPage("/login")
-          
-      .and()
-        .httpBasic()
-          .realmName("Taco Cloud")
-          
-      .and()
-        .logout()
-          .logoutSuccessUrl("/")
-          
-      .and()
-        .csrf()
-          .ignoringAntMatchers("/h2-console/**", "/api/**")
-
-      // Allow pages to be loaded in frames from the same origin; needed for H2-Console
-      .and()  
-        .headers()
-          .frameOptions()
-            .sameOrigin()
-      ;
+        .requestMatchers(HttpMethod.PATCH, "/api/ingredients").permitAll()
+        .requestMatchers("/**").permitAll())
+      .formLogin(form -> form.loginPage("/login"))
+      .httpBasic(basic -> basic.realmName("Taco Cloud"))
+      .logout(logout -> logout.logoutSuccessUrl("/"))
+      .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/api/**"))
+      .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
+    return http.build();
   }
 
   @Bean
@@ -66,15 +37,4 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     return NoOpPasswordEncoder.getInstance();
   }
   
-  
-  @Override
-  protected void configure(AuthenticationManagerBuilder auth)
-      throws Exception {
-
-    auth
-      .userDetailsService(userDetailsService)
-      .passwordEncoder(encoder());
-    
-  }
-
 }

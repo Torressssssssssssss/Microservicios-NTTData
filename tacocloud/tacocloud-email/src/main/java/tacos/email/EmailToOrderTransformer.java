@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.internet.InternetAddress;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.InternetAddress;
 
 import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.springframework.integration.mail.transformer.AbstractMailMessageTransformer;
@@ -43,7 +43,7 @@ public class EmailToOrderTransformer
 
   @Override
   protected AbstractIntegrationMessageBuilder<EmailOrder> 
-                doTransform(Message mailMessage) throws Exception {
+                doTransform(Message mailMessage) {
     EmailOrder tacoOrder = processPayload(mailMessage);
     return MessageBuilder.withPayload(tacoOrder);
   }

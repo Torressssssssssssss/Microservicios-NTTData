@@ -1,6 +1,6 @@
 package tacos.web.api;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;

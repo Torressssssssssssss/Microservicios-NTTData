@@ -2,9 +2,9 @@ package tacos.web.api;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import lombok.Data;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.Valid;
 import java.util.List;
 import tacos.Taco;
 
