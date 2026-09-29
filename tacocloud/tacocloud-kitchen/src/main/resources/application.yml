@@ -3,7 +3,9 @@ server:
 
 ---
 spring:
-  profiles: jms-template, jms-listener
+  config:
+    activate:
+      on-profile: jms-template, jms-listener
 # The values given here are actually the default values. But they are explicitly
 # set here as an example of setting the Artemis properties.
   jms:
@@ -19,7 +21,9 @@ spring:
     
 ---
 spring:
-  profiles: kafka-listener
+  config:
+    activate:
+      on-profile: kafka-listener
     
   kafka:
     bootstrap-servers:

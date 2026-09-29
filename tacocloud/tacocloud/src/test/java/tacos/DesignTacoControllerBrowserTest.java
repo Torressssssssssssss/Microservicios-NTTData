@@ -52,7 +52,7 @@ public class DesignTacoControllerBrowserTest {
   public void testDesignATacoPage() throws Exception {
     browser.get("http://localhost:" + port + "/api/tacos");
 
-    List<WebElement> ingredientGroups = browser.findElementsByClassName("ingredient-group");
+    List<WebElement> ingredientGroups = browser.findElements(By.className("ingredient-group"));
     assertThat(ingredientGroups).hasSize(5);
 
     WebElement wrapGroup = ingredientGroups.get(0);

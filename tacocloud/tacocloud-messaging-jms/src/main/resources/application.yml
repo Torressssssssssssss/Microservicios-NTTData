@@ -17,7 +17,9 @@ spring:
 # But it is left here as an example of configuring for a production profile
 # that will override the local configuration in the default profile.
 spring:
-  profiles: production
+  config:
+    activate:
+      on-profile: production
     
   artemis:
     host: artemis.tacocloud.com
