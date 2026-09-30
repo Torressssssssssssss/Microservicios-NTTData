@@ -1,6 +1,6 @@
 # Verificacion de los 36 retos de TacoCloud
 
-**Fecha:** 2026-09-29
+**Fecha:** 2026-09-27
 
 **Carpeta verificada:** `/home/torres/NTT/Microservicios-NTTData`
 
@@ -320,7 +320,7 @@ Los reportes XML confirmaron 68 pruebas, 0 fallos, 0 errores y 0 omitidas. La ej
 - **Solucion:** anuncios Mongo usan UUID, expiracion, limite concurrente, autor privado y operaciones ADMIN.
 - **Verificacion:** `announcementsPersistExpireAndEnforceConcurrentActiveLimit` y `announcementsUseValidatedDurableIdsAndPrivateAuthors`.
 - **Salida:** persistencia, vencimiento, limite, autorizacion y ocultamiento de autor aprobados.
-- **Estado:** APROBADO 100%.
+- **Estado:** APROBADO 100%. 
 
 ### TC-34 - Idempotency-Key en ordenes
 
