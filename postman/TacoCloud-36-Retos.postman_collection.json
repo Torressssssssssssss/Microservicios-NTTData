@@ -1,0 +1,1195 @@
+{
+  "info": {
+    "name": "TacoCloud - 36 retos",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Ejecutar la carpeta Flujo USER en orden. Postman debe conservar cookies. Las carpetas ADMIN/KITCHEN requieren la clave local de .runtime/lab.env en sus variables. Para cocina crear una orden adicional sin cancelarla. Las pruebas de concurrencia, broker, rollback, contratos y CI se ejecutan con scripts/verificar-retos.sh; no se sustituyen con esta coleccion."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "password",
+      "value": "class-postman-password-123"
+    },
+    {
+      "key": "adminPassword",
+      "value": ""
+    },
+    {
+      "key": "kitchenPassword",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Flujo USER",
+      "item": [
+        {
+          "name": "00 - Inicializar CSRF y variables",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/csrf"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });",
+                  "pm.collectionVariables.set(\"csrfToken\", pm.response.json().token);",
+                  "pm.collectionVariables.set(\"username\", \"student_\" + Date.now());",
+                  "pm.collectionVariables.set(\"email\", pm.collectionVariables.get(\"username\") + \"@example.test\");",
+                  "pm.collectionVariables.set(\"checkoutKey\", \"checkout_\" + Date.now());"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "01 - Registrar usuario (TC-10)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 - Iniciar sesion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 - Consultar ingredientes (TC-13/17)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 - Validar diseno (TC-18)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos/validate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Taco Postman\",\n  \"ingredientIds\": [\n    \"COTO\",\n    \"TMTO\",\n    \"SLSA\"\n  ],\n  \"vegan\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 - Guardar diseno",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Taco Postman\",\n  \"ingredientIds\": [\n    \"COTO\",\n    \"TMTO\",\n    \"SLSA\"\n  ],\n  \"vegan\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });",
+                  "pm.collectionVariables.set(\"tacoId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 - Tokenizar pago sintetico (TC-12)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/payment-methods/tokenize",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"syntheticCard\": \"test_4242\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });",
+                  "pm.collectionVariables.set(\"paymentId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07 - Cotizar cantidad 2 (TC-14/15)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/quote",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryName\": \"Student\",\n  \"deliveryStreet\": \"Lab street\",\n  \"deliveryCity\": \"City\",\n  \"deliveryState\": \"ST\",\n  \"deliveryZip\": \"12345\",\n  \"paymentMethodId\": \"{{paymentId}}\",\n  \"items\": [\n    {\n      \"taco\": {\n        \"name\": \"Taco Postman\",\n        \"ingredientIds\": [\n          \"COTO\",\n          \"TMTO\",\n          \"SLSA\"\n        ],\n        \"vegan\": true\n      },\n      \"quantity\": 2\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "08 - Comprar (TC-16/29/34)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{checkoutKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryName\": \"Student\",\n  \"deliveryStreet\": \"Lab street\",\n  \"deliveryCity\": \"City\",\n  \"deliveryState\": \"ST\",\n  \"deliveryZip\": \"12345\",\n  \"paymentMethodId\": \"{{paymentId}}\",\n  \"items\": [\n    {\n      \"taco\": {\n        \"name\": \"Taco Postman\",\n        \"ingredientIds\": [\n          \"COTO\",\n          \"TMTO\",\n          \"SLSA\"\n        ],\n        \"vegan\": true\n      },\n      \"quantity\": 2\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });",
+                  "pm.collectionVariables.set(\"orderId\", pm.response.json().id);",
+                  "pm.collectionVariables.set(\"orderVersion\", pm.response.json().version);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "09 - Repetir la misma compra (TC-34)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{checkoutKey}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryName\": \"Student\",\n  \"deliveryStreet\": \"Lab street\",\n  \"deliveryCity\": \"City\",\n  \"deliveryState\": \"ST\",\n  \"deliveryZip\": \"12345\",\n  \"paymentMethodId\": \"{{paymentId}}\",\n  \"items\": [\n    {\n      \"taco\": {\n        \"name\": \"Taco Postman\",\n        \"ingredientIds\": [\n          \"COTO\",\n          \"TMTO\",\n          \"SLSA\"\n        ],\n        \"vegan\": true\n      },\n      \"quantity\": 2\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });",
+                  "pm.test(\"Misma orden\", function () { pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get(\"orderId\")); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10 - Modificar ZIP (TC-04)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryZip\": \"54321\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11 - Historial propio (TC-23)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/orders?page=0&size=20"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12 - Agregar favorito (TC-21)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/favorites/{{tacoId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 204\", function () { pm.response.to.have.status(204); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "13 - Listar favoritos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/users/me/favorites"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "14 - Calificar (TC-22)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos/{{tacoId}}/rating",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"score\": 5\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 204\", function () { pm.response.to.have.status(204); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "15 - Ranking",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos/top?limit=10"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "16 - Taco del dia (TC-20)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos/today"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "17 - Buscar (TC-19)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/tacos?diet=VEGAN&size=12&sort=name,asc"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "18 - Cancelar y liberar stock (TC-25)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/orders/{{orderId}}/cancel",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "19 - Verificar alias (TC-35)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              }
+            ],
+            "url": "{{baseUrl}}/api/ingredients"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });",
+                  "pm.test(\"Alias deprecado\", function () { pm.expect(pm.response.headers.get(\"Deprecation\")).to.eql(\"true\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ADMIN",
+      "item": [
+        {
+          "name": "ADMIN - Crear ingrediente (TC-01/02/03)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"PM-INGREDIENT\",\n  \"name\": \"Prueba Postman\",\n  \"type\": \"WRAP\"\n}"
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN - Actualizar ingrediente",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/PM-INGREDIENT",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"PM-INGREDIENT\",\n  \"name\": \"Actualizado\",\n  \"type\": \"WRAP\"\n}"
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN - Eliminar ingrediente",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/ingredients/PM-INGREDIENT",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 204\", function () { pm.response.to.have.status(204); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN - Ajustar stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/ingredients/COTO/stock-adjustments",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delta\": 5\n}"
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN - Auditoria ordenes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/orders",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN - DLQ (TC-30)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/admin/dead-letters",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ADMIN - Metricas (TC-32)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              }
+            ],
+            "url": "{{baseUrl}}/actuator/metrics",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{adminPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Anuncios activos (TC-33)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/announcements"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "KITCHEN",
+      "item": [
+        {
+          "name": "KITCHEN - Consultar cola (TC-26)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/kitchen/queue",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "kitchen",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{kitchenPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "KITCHEN - Reclamar siguiente (requiere orden CREATED)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/kitchen/orders/claim",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "kitchen",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{kitchenPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });",
+                  "pm.collectionVariables.set(\"kitchenOrderId\", pm.response.json().id);",
+                  "pm.collectionVariables.set(\"kitchenVersion\", pm.response.json().version);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "KITCHEN - Preparar (TC-25)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-Correlation-Id",
+                "value": "postman-course-36"
+              },
+              {
+                "key": "X-XSRF-TOKEN",
+                "value": "{{csrfToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/api/v1/kitchen/orders/{{kitchenOrderId}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"PREPARING\",\n  \"version\": {{kitchenVersion}},\n  \"reason\": \"Postman kitchen\"\n}"
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "kitchen",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{kitchenPassword}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Correlation returned\", function () { pm.expect(pm.response.headers.get(\"X-Correlation-Id\")).to.eql(\"postman-course-36\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

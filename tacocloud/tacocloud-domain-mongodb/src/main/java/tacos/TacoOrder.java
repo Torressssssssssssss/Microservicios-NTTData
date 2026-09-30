@@ -24,7 +24,7 @@ public class TacoOrder implements Serializable {
   // Las ordenes previas sin estado se consideran CREATED en el servicio.
   private Status status = Status.CREATED;
 
-  public enum Status { CREATED, PREPARING, READY, DELIVERED, CANCELLED }
+  public enum Status { CREATED, ACCEPTED, PREPARING, READY, OUT_FOR_DELIVERY, DELIVERED, CANCELLED }
 
 
   private String deliveryName;
@@ -37,11 +37,20 @@ public class TacoOrder implements Serializable {
 
   private String deliveryZip;
 
-  private String ccNumber;
-
-  private String ccExpiration;
-
-  private String ccCVV;
+  private String paymentMethodId;
+  private String paymentBrand;
+  private String paymentLast4;
+  private java.math.BigDecimal subtotal = java.math.BigDecimal.ZERO;
+  private java.math.BigDecimal discount = java.math.BigDecimal.ZERO;
+  private java.math.BigDecimal total = java.math.BigDecimal.ZERO;
+  private String currency = "MXN";
+  private String couponCode;
+  private String cookId;
+  private String stationId;
+  private int estimatedPrepMinutes;
+  @org.springframework.data.annotation.Version private Long version;
+  private List<OrderLine> items = new ArrayList<>();
+  private List<StatusChange> history = new ArrayList<>();
 
 
   private List<Taco> tacos = new ArrayList<>();

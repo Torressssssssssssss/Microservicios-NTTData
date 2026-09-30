@@ -19,10 +19,11 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		 <java.version>25</java.version>
+
 	</properties>
 
 	<dependencies>
+<dependency><groupId>sia</groupId><artifactId>tacocloud-messaging-contract</artifactId><version>${tacocloud.version}</version></dependency>
 		<!-- TacoCloud dependencies -->
 		<dependency>
 			<groupId>sia</groupId>

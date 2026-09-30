@@ -3,19 +3,19 @@
   <div class="topbar">
     <div class="topbaritems">
       <div class="topbaritem" style="font-size: 17pt;">
-        <a [routerLink]="['design']" class="plainlink caps">Design a Taco</a>
+        <a [routerLink]="['/design']" class="plainlink caps">Design a Taco</a>
       </div>
       <div class="topbaritem">
-        <a href="login" class="plainlink">
+        <a [routerLink]="['/login']" class="plainlink">
           <img src="assets/down-triangle.png" style="float: right; margin-right:15px; margin-top: 12px;"/>
           <span class="caps small">Sign in</span><br/>
           <span class="smaller">or Create an Account</span>
         </a>
       </div>
       <div class="topbaritem" style="font-size: 17pt;">
-        <a [routerLink]="['cart']" class="plainlink">
+        <a [routerLink]="['/cart']" class="plainlink">
           <img src="assets/cart.png" align="center" />
-          {{cart.getItemsInCart().length * 4.99 | currency}}
+          {{cart.getCartTotal() | currency}}
         </a>
       </div>
     </div>
@@ -24,7 +24,7 @@
     <div class="bottombaritems">
       <div class="bottombaritem">
         <!-- <a href="recents" class="plainlink">Latest designs</a> -->
-        <a [routerLink]="['recents']" class="plainlink">Latest designs</a>
+        <a [routerLink]="['/recents']" class="plainlink">Latest designs</a>
       </div>
       <div class="bottombaritem">
         <!-- <a href="specials" class="plainlink">Specials</a> -->

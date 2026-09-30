@@ -21,31 +21,32 @@ import tacos.Ingredient;
 import tacos.web.api.IngredientController;
 import static org.junit.jupiter.api.Assertions.*;
 
-@Testcontainers
 @SpringBootTest(classes=IngredientMongoIT.Application.class,
     webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties={"server.servlet.context-path=/course", "spring.main.web-application-type=servlet", "taco.api.allowed-origin=http://localhost:8080"})
 class IngredientMongoIT {
-  @Container
-  static MongoDBContainer mongo = new MongoDBContainer("mongo:4.4.29");
 
+
+  private static final String DATABASE="tc36_http_"+System.nanoTime();
   @DynamicPropertySource
   static void database(DynamicPropertyRegistry registry) {
-    registry.add("spring.data.mongodb.uri", mongo::getReplicaSetUrl);
+    registry.add("spring.data.mongodb.uri", MongoTestSupport::uri);
+    registry.add("spring.data.mongodb.database", ()->DATABASE);
   }
 
   @Autowired TestRestTemplate http;
 
   @SpringBootConfiguration
   @EnableAutoConfiguration(exclude={SecurityAutoConfiguration.class,
-      UserDetailsServiceAutoConfiguration.class, RepositoryRestMvcAutoConfiguration.class})
+      UserDetailsServiceAutoConfiguration.class, org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration.class, RepositoryRestMvcAutoConfiguration.class})
   @EnableReactiveMongoRepositories(basePackages="tacos.data")
   @Import(IngredientController.class)
   static class Application { }
 
   @Test
   void createUpdateReadDeleteAgainstRealMongo() {
-    Ingredient ingredient = new Ingredient("integration-A", "Original", Ingredient.Type.WRAP);
+    tacos.api.dto.Requests.IngredientRequest ingredient = new tacos.api.dto.Requests.IngredientRequest();
+    ingredient.setId("integration-A");ingredient.setName("Original");ingredient.setType(Ingredient.Type.WRAP);
     ResponseEntity<Ingredient> created = http.postForEntity("/api/ingredients", ingredient, Ingredient.class);
     assertEquals(HttpStatus.CREATED, created.getStatusCode());
     assertNotNull(created.getHeaders().getLocation());

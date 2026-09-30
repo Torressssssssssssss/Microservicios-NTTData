@@ -8,7 +8,7 @@ export class ApiService {
   }
 
   get(path: String) {
-    return this.http.get('http://localhost:8080' + path);
+    return this.http.get('' + path);
   }
 
 }

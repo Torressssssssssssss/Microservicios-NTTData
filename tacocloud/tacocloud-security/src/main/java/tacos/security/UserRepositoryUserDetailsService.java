@@ -25,8 +25,8 @@ public class UserRepositoryUserDetailsService
   public UserDetails loadUserByUsername(String username)
       throws UsernameNotFoundException {
 
-    // TODO: Replace with reactive equivalent instead of blocking
-    User user = userRepo.findByUsername(username).block();
+    // Borde sincrono de Spring Security Servlet; los servicios de negocio siguen reactivos.
+    User user = userRepo.findByUsername(username.toLowerCase(java.util.Locale.ROOT)).block();
     if (user != null) {
       return user;
     }

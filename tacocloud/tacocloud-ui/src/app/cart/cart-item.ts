@@ -9,7 +9,7 @@ export class CartItem {
   }
 
   get lineTotal() {
-    return this.quantity * 4.99;
+    return Number(this.quantity) * this.taco.ingredients.reduce((sum, i) => sum + Number(i.unitPrice || 0), 0);
   }
 
 }

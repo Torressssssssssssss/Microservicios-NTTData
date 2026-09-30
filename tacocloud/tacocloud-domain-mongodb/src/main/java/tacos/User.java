@@ -15,30 +15,39 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 @Data
-@NoArgsConstructor(access=AccessLevel.PRIVATE, force=true)
-@RequiredArgsConstructor
+@NoArgsConstructor
+
 @Document
 public class User implements UserDetails {
 
+  public User(String username,String password,String fullname,String street,String city,String state,String zip,String phoneNumber,String email) {
+    this.username=username;this.password=password;this.fullname=fullname;this.street=street;this.city=city;this.state=state;this.zip=zip;this.phoneNumber=phoneNumber;this.email=email;
+  }
   private static final long serialVersionUID = 1L;
 
   @Id
   private String id;
   
-  private final String username;
+  @org.springframework.data.mongodb.core.index.Indexed(unique=true)
+  private String username;
   
-  private final String password;
-  private final String fullname;
-  private final String street;
-  private final String city;
-  private final String state;
-  private final String zip;
-  private final String phoneNumber;
-  private final String email;
+  @com.fasterxml.jackson.annotation.JsonIgnore
+  @lombok.ToString.Exclude
+  private String password;
+  private String fullname;
+  private String street;
+  private String city;
+  private String state;
+  private String zip;
+  private String phoneNumber;
+  @org.springframework.data.mongodb.core.index.Indexed(unique=true)
+  private String email;
   
+  private java.util.Set<String> roles = new java.util.HashSet<>(Arrays.asList("USER"));
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
-    return Arrays.asList(new SimpleGrantedAuthority("ROLE_USER"));
+    return roles.stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+        .collect(java.util.stream.Collectors.toList());
   }
 
   @Override

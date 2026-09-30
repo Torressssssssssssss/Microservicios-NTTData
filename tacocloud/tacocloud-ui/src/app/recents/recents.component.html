@@ -1,22 +1,19 @@
-<cloud-title>Admire some recently created taco masterpieces</cloud-title>
-
-<p>Even the greatest artists sometimes need to be inspired by the works of others.
-  Here are some of the most recently created tacos, designed by taco artists just like you...</p>
-
-<div class="recentsblock">
-  <div class="tacoblock" *ngFor="let taco of recentTacos">
-      <div class="tacoName"><span class="small">The</span><br/>"{{taco.name}}"</div>
-      <div class="tacoDesc">
-        <ul class="commalist">
-          <li *ngFor="let ingredient of taco.ingredients | nonwraps">{{ingredient.name}}</li>
-        </ul>
-        <div *ngIf="(taco.ingredients | wraps)?.length > 0">
-        <span>wrapped in</span><ul class="commalist">
-            <li *ngFor="let ingredient of taco.ingredients | wraps">{{ingredient.name}}</li>
-        </ul>
-        </div>
-        <div *ngIf="(taco.ingredients | wraps)?.length == 0">in a bowl</div>
-      </div>
-      <little-button label="Order this taco"></little-button>
-  </div>
+<cloud-title>Catalogo de tacos</cloud-title>
+<input [(ngModel)]="name" placeholder="Buscar nombre" />
+<select [(ngModel)]="diet"><option value="">Todas las dietas</option><option>VEGAN</option><option>VEGETARIAN</option><option>GLUTEN_FREE</option></select>
+<button (click)="page=0; search()">Buscar</button>
+<p role="alert">{{error}}</p>
+<p>Metadata academica; no sustituye controles de contaminacion cruzada.</p>
+<div *ngFor="let taco of recentTacos">
+  <h3>{{taco.name}}</h3><p>{{taco.dietaryTags}} | Picante: {{taco.spiceLevel}} | Alergenos: {{taco.allergens}}</p>
+  <button (click)="add(taco)">Agregar al carrito</button>
+  <button (click)="favorite(taco)">{{favorites.indexOf(taco.id) >= 0 ? 'Quitar favorito' : 'Favorito'}}</button>
+  <select #score><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select><button (click)="rate(taco, score.value)">Calificar</button>
 </div>
+<button (click)="next(-1)" [disabled]="page===0">Anterior</button><span>Pagina {{page+1}} / {{total}} tacos</span>
+<button (click)="next(1)" [disabled]="(page+1)*12>=total">Siguiente</button>
+<button (click)="top()">Ranking</button><p *ngFor="let row of ranking">{{row._id}}: {{row.average}} ({{row.count}} votos)</p>
+<button (click)="orders()">Mis ordenes</button>
+<input [(ngModel)]="paymentMethodId" placeholder="Metodo de pago para recompra" />
+<label><input type="checkbox" [(ngModel)]="confirmPriceChange" />Aceptar precio actual en recompra</label>
+<div *ngFor="let order of history">{{order.id}} | {{order.total}} {{order.currency}} | {{order.status}} <button (click)="reorder(order)">Reordenar</button></div>

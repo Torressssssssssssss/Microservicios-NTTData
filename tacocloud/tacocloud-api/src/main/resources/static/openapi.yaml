@@ -1,0 +1,4524 @@
+openapi: 3.0.3
+info:
+  title: TacoCloud course API
+  version: 1.0.0
+  description: 'TC-01 to TC-36. Money: MXN, sum of ingredient prices, HALF_UP at 2
+    decimals. /api is a transitional alias with Deprecation: true and Link to this
+    spec; no removal date is committed. Use /api/v1. Catalog metadata is academic
+    and does not replace cross-contamination controls. Runtime Spring Boot 2.5 / MVC.'
+servers:
+- url: /api/v1
+- url: /api
+  description: Deprecated compatibility alias
+paths:
+  /ingredients:
+    get:
+      operationId: get_ingredients
+      summary: List ingredients
+      security: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IngredientResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+    post:
+      operationId: post_ingredients
+      summary: Create ingredient (ADMIN)
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '201':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+            Location:
+              schema:
+                type: string
+                format: uri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngredientResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngredientRequest'
+  /ingredients/{id}:
+    get:
+      operationId: get_ingredients_id
+      summary: get ingredient
+      security: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngredientResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+    put:
+      operationId: put_ingredients_id
+      summary: put ingredient
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngredientResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngredientRequest'
+    delete:
+      operationId: delete_ingredients_id
+      summary: delete ingredient
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '204':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /admin/ingredients/{id}/catalog:
+    patch:
+      operationId: patch_admin_ingredients_id_catalog
+      summary: Update catalog metadata (ADMIN)
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngredientAdminResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogUpdate'
+  /admin/ingredients/{id}/stock-adjustments:
+    post:
+      operationId: post_admin_ingredients_id_stock_adjustments
+      summary: Adjust stock atomically (ADMIN)
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngredientAdminResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockAdjustment'
+  /tacos:
+    get:
+      operationId: get_tacos
+      summary: Search tacos
+      security: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: name
+        in: query
+        required: false
+        schema:
+          type: string
+          maxLength: 80
+      - name: ingredientId
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: diet
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/DietaryTag'
+      - name: excludeAllergen
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/Allergen'
+      - name: spice
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 5
+      - name: sort
+        in: query
+        required: false
+        schema:
+          type: string
+          pattern: ^(createdAt|name|spiceLevel),(asc|desc)$
+          default: createdAt,desc
+      - name: recent
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/TacoPage'
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/TacoResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      description: With recent parameter, returns an array of at most 12; otherwise
+        a page.
+    post:
+      operationId: post_tacos
+      summary: Create design
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '201':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TacoResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DesignRequest'
+  /tacos/validate:
+    post:
+      operationId: post_tacos_validate
+      summary: Validate design
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidatedDesign'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DesignRequest'
+  /tacos/{id}:
+    get:
+      operationId: get_tacos_id
+      summary: /tacos/{id}
+      security: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TacoResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /tacos/{id}/classification:
+    get:
+      operationId: get_tacos_id_classification
+      summary: /tacos/{id}/classification
+      security: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Classification'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /tacos/today:
+    get:
+      operationId: get_tacos_today
+      summary: /tacos/today
+      security: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyTaco'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /tacos/top:
+    get:
+      operationId: get_tacos_top
+      summary: /tacos/top
+      security: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ranking'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /tacos/{id}/rating:
+    put:
+      operationId: put_tacos_id_rating
+      summary: Rate taco
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '204':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Rating'
+  /orders:
+    post:
+      operationId: post_orders
+      summary: Place order idempotently
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{8,100}$
+        description: Scoped to authenticated user. Identical request replays its original
+          response for at least 168 hours. Different payload returns 409. An aborted
+          transaction leaves no IN_PROGRESS record.
+      responses:
+        '201':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+  /orders/quote:
+    post:
+      operationId: post_orders_quote
+      summary: Quote without side effects
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+  /orders/fromEmail:
+    post:
+      operationId: post_orders_fromEmail
+      summary: Place email order (ADMIN)
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '201':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailOrder'
+  /orders/{id}:
+    put:
+      operationId: put_orders_id
+      summary: put own order
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderReplacement'
+    patch:
+      operationId: patch_orders_id
+      summary: patch own order
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderPatch'
+    delete:
+      operationId: delete_orders_id
+      summary: delete own order
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '204':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /orders/{id}/cancel:
+    post:
+      operationId: post_orders_id_cancel
+      summary: Cancel own order before preparation
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /orders/{id}/status:
+    patch:
+      operationId: patch_orders_id_status
+      summary: Change order status (ADMIN)
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+  /orders/{id}/reorder:
+    post:
+      operationId: post_orders_id_reorder
+      summary: Reorder with current rules
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{8,100}$
+        description: Scoped to authenticated user. Identical request replays its original
+          response for at least 168 hours. Different payload returns 409. An aborted
+          transaction leaves no IN_PROGRESS record.
+      responses:
+        '201':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReorderRequest'
+  /users/me/orders:
+    get:
+      operationId: get_users_me_orders
+      summary: Own order history
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderPage'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /users/me/orders/{id}:
+    get:
+      operationId: get_users_me_orders_id
+      summary: Own order detail
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /admin/orders:
+    get:
+      operationId: get_admin_orders
+      summary: Audit orders (ADMIN)
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: status
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/Status'
+      - name: userId
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderPage'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /users/me/favorites:
+    get:
+      operationId: get_users_me_favorites
+      summary: Own favorite tacos
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TacoPage'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /users/me/favorites/{id}:
+    put:
+      operationId: put_users_me_favorites_id
+      summary: put favorite
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '204':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+    delete:
+      operationId: delete_users_me_favorites_id
+      summary: delete favorite
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '204':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /payment-methods/tokenize:
+    post:
+      operationId: post_payment_methods_tokenize
+      summary: Tokenize synthetic payment
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '201':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenizeRequest'
+  /auth/register:
+    post:
+      operationId: post_auth_register
+      summary: Register /auth/register
+      security: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '201':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+  /users:
+    post:
+      operationId: post_users
+      summary: Register /users
+      security: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '201':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrationRequest'
+  /auth/login:
+    post:
+      operationId: post_auth_login
+      summary: Sign in
+      security: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+  /auth/me:
+    get:
+      operationId: get_auth_me
+      summary: Current session
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /auth/csrf:
+    get:
+      operationId: get_auth_csrf
+      summary: Initialize CSRF cookie
+      security: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CsrfResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /kitchen/queue:
+    get:
+      operationId: get_kitchen_queue
+      summary: FIFO queue (KITCHEN)
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KitchenOrder'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /kitchen/orders/claim:
+    post:
+      operationId: post_kitchen_orders_claim
+      summary: Claim next order (KITCHEN)
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KitchenOrder'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /kitchen/orders/{id}/status:
+    patch:
+      operationId: patch_kitchen_orders_id_status
+      summary: Advance kitchen order (KITCHEN)
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KitchenOrder'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Transition'
+  /announcements:
+    get:
+      operationId: get_announcements
+      summary: Active announcements
+      security: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AnnouncementResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /admin/announcements:
+    post:
+      operationId: post_admin_announcements
+      summary: Publish announcement (ADMIN)
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '201':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnnouncementAdminResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnouncementRequest'
+  /admin/announcements/{id}:
+    delete:
+      operationId: delete_admin_announcements_id
+      summary: Delete announcement (ADMIN)
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '204':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /admin/dead-letters:
+    get:
+      operationId: get_admin_dead_letters
+      summary: Inspect dead letters (ADMIN)
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DeadLetter'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+  /admin/dead-letters/{id}/replay:
+    post:
+      operationId: post_admin_dead_letters_id_replay
+      summary: Replay validated event (ADMIN)
+      security:
+      - basicAuth: []
+      - sessionAuth: []
+      parameters:
+      - name: X-Correlation-Id
+        in: header
+        required: false
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9_-]{1,64}$
+        description: Invalid or absent values are replaced by a UUID.
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-XSRF-TOKEN
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Obtain from /auth/csrf and send with its XSRF-TOKEN cookie. Required
+          with Basic and session authentication.
+      responses:
+        '200':
+          description: Success
+          headers:
+            X-Correlation-Id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReplayResponse'
+        '400':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '401':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '403':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '404':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '409':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '422':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+        '500':
+          description: Controlled error
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/ApiProblem'
+components:
+  schemas:
+    IngredientType:
+      type: string
+      enum:
+      - WRAP
+      - PROTEIN
+      - VEGGIES
+      - CHEESE
+      - SAUCE
+    DietaryTag:
+      type: string
+      enum:
+      - VEGAN
+      - VEGETARIAN
+      - GLUTEN_FREE
+    Allergen:
+      type: string
+      enum:
+      - GLUTEN
+      - MILK
+      - SOY
+      - PEANUT
+      - TREE_NUT
+      - EGG
+      - FISH
+      - SHELLFISH
+    Status:
+      type: string
+      enum:
+      - CREATED
+      - ACCEPTED
+      - PREPARING
+      - READY
+      - OUT_FOR_DELIVERY
+      - DELIVERED
+      - CANCELLED
+    IngredientRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          nullable: true
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        type:
+          $ref: '#/components/schemas/IngredientType'
+      additionalProperties: false
+      required:
+      - name
+      - type
+    IngredientResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/IngredientType'
+        unitPrice:
+          type: number
+          minimum: 0
+          multipleOf: 0.01
+          example: 7.0
+        available:
+          type: boolean
+        dietaryTags:
+          type: array
+          items:
+            $ref: '#/components/schemas/DietaryTag'
+        allergens:
+          type: array
+          items:
+            $ref: '#/components/schemas/Allergen'
+        spiceLevel:
+          type: integer
+          minimum: 0
+          maximum: 5
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - type
+      - unitPrice
+      - available
+      - dietaryTags
+      - allergens
+      - spiceLevel
+    CatalogUpdate:
+      type: object
+      properties:
+        unitPrice:
+          type: number
+          minimum: 0
+          multipleOf: 0.01
+          example: 7.0
+        available:
+          type: boolean
+        reorderLevel:
+          type: integer
+          minimum: 0
+        version:
+          type: integer
+          minimum: 0
+        dietaryTags:
+          type: array
+          items:
+            $ref: '#/components/schemas/DietaryTag'
+        allergens:
+          type: array
+          items:
+            $ref: '#/components/schemas/Allergen'
+        spiceLevel:
+          type: integer
+          minimum: 0
+          maximum: 5
+      additionalProperties: false
+      required:
+      - unitPrice
+      - version
+    IngredientAdminResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/IngredientType'
+        unitPrice:
+          type: number
+          minimum: 0
+          multipleOf: 0.01
+          example: 7.0
+        available:
+          type: boolean
+        dietaryTags:
+          type: array
+          items:
+            $ref: '#/components/schemas/DietaryTag'
+        allergens:
+          type: array
+          items:
+            $ref: '#/components/schemas/Allergen'
+        spiceLevel:
+          type: integer
+          minimum: 0
+          maximum: 5
+        stockOnHand:
+          type: integer
+          minimum: 0
+        reorderLevel:
+          type: integer
+          minimum: 0
+        version:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - type
+      - unitPrice
+      - available
+      - dietaryTags
+      - allergens
+      - spiceLevel
+      - stockOnHand
+      - reorderLevel
+      - version
+    StockAdjustment:
+      type: object
+      properties:
+        delta:
+          type: integer
+          minimum: -1000000
+          maximum: 1000000
+      additionalProperties: false
+      required:
+      - delta
+    DesignRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 5
+          maxLength: 100
+        ingredientIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          minItems: 2
+          maxItems: 12
+        beverage:
+          type: boolean
+          default: false
+        vegan:
+          type: boolean
+          default: false
+      additionalProperties: false
+      required:
+      - name
+      - ingredientIds
+    TacoResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          nullable: true
+        name:
+          type: string
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/IngredientResponse'
+        beverage:
+          type: boolean
+        dietaryTags:
+          type: array
+          items:
+            $ref: '#/components/schemas/DietaryTag'
+        allergens:
+          type: array
+          items:
+            $ref: '#/components/schemas/Allergen'
+        spiceLevel:
+          type: integer
+          minimum: 0
+          maximum: 5
+      additionalProperties: false
+      required:
+      - name
+      - ingredients
+      - beverage
+      - dietaryTags
+      - allergens
+      - spiceLevel
+    ItemRequest:
+      type: object
+      properties:
+        taco:
+          $ref: '#/components/schemas/DesignRequest'
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 50
+      additionalProperties: false
+      required:
+      - taco
+      - quantity
+    OrderCreateRequest:
+      type: object
+      properties:
+        deliveryName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        deliveryStreet:
+          type: string
+          minLength: 1
+          maxLength: 200
+        deliveryCity:
+          type: string
+          minLength: 1
+          maxLength: 100
+        deliveryState:
+          type: string
+          minLength: 1
+          maxLength: 100
+        deliveryZip:
+          type: string
+          pattern: ^[A-Za-z0-9 -]{3,12}$
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemRequest'
+          minItems: 1
+          maxItems: 50
+        paymentMethodId:
+          type: string
+          minLength: 1
+        couponCode:
+          type: string
+          maxLength: 40
+          nullable: true
+      additionalProperties: false
+      required:
+      - deliveryName
+      - deliveryStreet
+      - deliveryCity
+      - deliveryState
+      - deliveryZip
+      - items
+      - paymentMethodId
+    OrderReplacement:
+      type: object
+      properties:
+        deliveryName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        deliveryStreet:
+          type: string
+          minLength: 1
+          maxLength: 200
+        deliveryCity:
+          type: string
+          minLength: 1
+          maxLength: 100
+        deliveryState:
+          type: string
+          minLength: 1
+          maxLength: 100
+        deliveryZip:
+          type: string
+          pattern: ^[A-Za-z0-9 -]{3,12}$
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemRequest'
+          minItems: 1
+          maxItems: 50
+        paymentMethodId:
+          type: string
+          minLength: 1
+        couponCode:
+          type: string
+          maxLength: 40
+          nullable: true
+        id:
+          type: string
+          nullable: true
+      additionalProperties: false
+      required:
+      - deliveryName
+      - deliveryStreet
+      - deliveryCity
+      - deliveryState
+      - deliveryZip
+      - items
+      - paymentMethodId
+    OrderPatch:
+      type: object
+      properties:
+        deliveryName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          nullable: true
+        deliveryStreet:
+          type: string
+          minLength: 1
+          maxLength: 200
+          nullable: true
+        deliveryCity:
+          type: string
+          minLength: 1
+          maxLength: 100
+          nullable: true
+        deliveryState:
+          type: string
+          minLength: 1
+          maxLength: 100
+          nullable: true
+        deliveryZip:
+          type: string
+          pattern: ^[A-Za-z0-9 -]{3,12}$
+          nullable: true
+      additionalProperties: false
+    OrderLine:
+      type: object
+      properties:
+        taco:
+          $ref: '#/components/schemas/TacoResponse'
+        quantity:
+          type: integer
+          minimum: 1
+        unitPriceAtPurchase:
+          type: number
+          minimum: 0
+          multipleOf: 0.01
+          example: 7.0
+        subtotal:
+          type: number
+          minimum: 0
+          multipleOf: 0.01
+          example: 7.0
+      additionalProperties: false
+      required:
+      - taco
+      - quantity
+      - unitPriceAtPurchase
+      - subtotal
+    OrderResponse:
+      type: object
+      properties:
+        deliveryName:
+          type: string
+          minLength: 1
+          maxLength: 100
+          nullable: true
+        deliveryStreet:
+          type: string
+          minLength: 1
+          maxLength: 200
+          nullable: true
+        deliveryCity:
+          type: string
+          minLength: 1
+          maxLength: 100
+          nullable: true
+        deliveryState:
+          type: string
+          minLength: 1
+          maxLength: 100
+          nullable: true
+        deliveryZip:
+          type: string
+          pattern: ^[A-Za-z0-9 -]{3,12}$
+          nullable: true
+        id:
+          type: string
+          nullable: true
+        placedAt:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          $ref: '#/components/schemas/Status'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderLine'
+        subtotal:
+          type: number
+          minimum: 0
+          multipleOf: 0.01
+          example: 7.0
+        discount:
+          type: number
+          minimum: 0
+          multipleOf: 0.01
+          example: 7.0
+        total:
+          type: number
+          minimum: 0
+          multipleOf: 0.01
+          example: 7.0
+        currency:
+          type: string
+          enum:
+          - MXN
+        version:
+          type: integer
+          nullable: true
+        paymentBrand:
+          type: string
+          nullable: true
+        paymentLast4:
+          type: string
+          pattern: ^[0-9]{4}$
+          nullable: true
+      additionalProperties: false
+      required:
+      - status
+      - items
+      - subtotal
+      - discount
+      - total
+      - currency
+    KitchenOrder:
+      type: object
+      properties:
+        id:
+          type: string
+        placedAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/Status'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderLine'
+        estimatedPrepMinutes:
+          type: integer
+          minimum: 0
+        stationId:
+          type: string
+          nullable: true
+        version:
+          type: integer
+      additionalProperties: false
+      required:
+      - id
+      - status
+      - items
+      - estimatedPrepMinutes
+      - version
+    Transition:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/Status'
+        version:
+          type: integer
+          minimum: 0
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 200
+      additionalProperties: false
+      required:
+      - status
+      - version
+      - reason
+    ReorderRequest:
+      type: object
+      properties:
+        paymentMethodId:
+          type: string
+          minLength: 1
+        confirmPriceChange:
+          type: boolean
+          default: false
+      additionalProperties: false
+      required:
+      - paymentMethodId
+    Rating:
+      type: object
+      properties:
+        score:
+          type: integer
+          minimum: 1
+          maximum: 5
+      additionalProperties: false
+      required:
+      - score
+    Ranking:
+      type: object
+      properties:
+        _id:
+          type: string
+        average:
+          type: number
+          minimum: 1
+          maximum: 5
+        count:
+          type: integer
+          minimum: 1
+        distribution:
+          type: object
+          properties:
+            '1':
+              type: integer
+              minimum: 0
+            '2':
+              type: integer
+              minimum: 0
+            '3':
+              type: integer
+              minimum: 0
+            '4':
+              type: integer
+              minimum: 0
+            '5':
+              type: integer
+              minimum: 0
+          additionalProperties: false
+      additionalProperties: false
+      required:
+      - _id
+      - average
+      - count
+      - distribution
+    TokenizeRequest:
+      type: object
+      properties:
+        syntheticCard:
+          type: string
+          pattern: ^test_[0-9]{4}$
+          example: test_4242
+      additionalProperties: false
+      required:
+      - syntheticCard
+    PaymentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        brand:
+          type: string
+        last4:
+          type: string
+          pattern: ^[0-9]{4}$
+      additionalProperties: false
+      required:
+      - id
+      - brand
+      - last4
+    RegistrationRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          pattern: ^[a-zA-Z0-9_.-]{3,40}$
+        password:
+          type: string
+          minLength: 10
+          maxLength: 72
+          writeOnly: true
+        email:
+          type: string
+          format: email
+        fullname:
+          type: string
+          nullable: true
+        street:
+          type: string
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        state:
+          type: string
+          nullable: true
+        zip:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+      additionalProperties: false
+      required:
+      - username
+      - password
+      - email
+    AccountResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+      additionalProperties: false
+      required:
+      - id
+      - username
+      - email
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+          writeOnly: true
+      additionalProperties: false
+      required:
+      - username
+      - password
+    SessionResponse:
+      type: object
+      properties:
+        username:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+      additionalProperties: false
+      required:
+      - username
+      - roles
+    CsrfResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        headerName:
+          type: string
+          enum:
+          - X-XSRF-TOKEN
+      additionalProperties: false
+      required:
+      - token
+      - headerName
+    EmailTaco:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 5
+          maxLength: 100
+        ingredients:
+          type: array
+          items:
+            type: string
+          minItems: 2
+          maxItems: 12
+      additionalProperties: false
+      required:
+      - name
+      - ingredients
+    EmailOrder:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        tacos:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmailTaco'
+          minItems: 1
+          maxItems: 50
+      additionalProperties: false
+      required:
+      - email
+      - tacos
+    Violation:
+      type: object
+      properties:
+        field:
+          type: string
+        code:
+          type: string
+        reason:
+          type: string
+      additionalProperties: false
+      required:
+      - field
+      - reason
+    ApiProblem:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+        correlationId:
+          type: string
+        violations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Violation'
+        previousTotal:
+          type: number
+          minimum: 0
+          multipleOf: 0.01
+          example: 7.0
+        quote:
+          $ref: '#/components/schemas/OrderResponse'
+      additionalProperties: false
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - instance
+      - code
+      - correlationId
+      - violations
+    AnnouncementRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 500
+        severity:
+          type: string
+          enum:
+          - INFO
+          - WARNING
+          - CRITICAL
+        expiresAt:
+          type: string
+          format: date-time
+      additionalProperties: false
+      required:
+      - text
+      - severity
+      - expiresAt
+    AnnouncementResponse:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 500
+        severity:
+          type: string
+          enum:
+          - INFO
+          - WARNING
+          - CRITICAL
+        expiresAt:
+          type: string
+          format: date-time
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+      additionalProperties: false
+      required:
+      - id
+      - text
+      - severity
+      - createdAt
+      - expiresAt
+    AnnouncementAdminResponse:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 500
+        severity:
+          type: string
+          enum:
+          - INFO
+          - WARNING
+          - CRITICAL
+        expiresAt:
+          type: string
+          format: date-time
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+        active:
+          type: boolean
+      additionalProperties: false
+      required:
+      - id
+      - text
+      - severity
+      - createdAt
+      - expiresAt
+      - createdBy
+      - active
+    DeadLetter:
+      type: object
+      properties:
+        id:
+          type: string
+        cause:
+          type: string
+          enum:
+          - INVALID_EVENT
+          - RETRY_EXHAUSTED
+        correlationId:
+          type: string
+        failedAt:
+          type: string
+          format: date-time
+        replayed:
+          type: boolean
+        replayable:
+          type: boolean
+      additionalProperties: false
+      required:
+      - id
+      - cause
+      - correlationId
+      - failedAt
+      - replayed
+      - replayable
+    ReplayResponse:
+      type: object
+      properties:
+        applied:
+          type: boolean
+      additionalProperties: false
+      required:
+      - applied
+    Classification:
+      type: object
+      properties:
+        dietaryTags:
+          type: array
+          items:
+            $ref: '#/components/schemas/DietaryTag'
+        allergens:
+          type: array
+          items:
+            $ref: '#/components/schemas/Allergen'
+        spiceLevel:
+          type: integer
+        notice:
+          type: string
+      additionalProperties: false
+      required:
+      - dietaryTags
+      - allergens
+      - spiceLevel
+      - notice
+    DailyTaco:
+      type: object
+      properties:
+        taco:
+          $ref: '#/components/schemas/TacoResponse'
+        date:
+          type: string
+          format: date
+        reason:
+          type: string
+      additionalProperties: false
+      required:
+      - taco
+      - date
+      - reason
+    ValidatedDesign:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        taco:
+          $ref: '#/components/schemas/TacoResponse'
+      additionalProperties: false
+      required:
+      - valid
+      - taco
+    TacoPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/TacoResponse'
+        page:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 1
+        totalElements:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+      required:
+      - content
+      - page
+      - size
+      - totalElements
+    OrderPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderResponse'
+        page:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 1
+        totalElements:
+          type: integer
+          minimum: 0
+      additionalProperties: false
+      required:
+      - content
+      - page
+      - size
+      - totalElements
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID

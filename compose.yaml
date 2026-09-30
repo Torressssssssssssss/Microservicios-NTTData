@@ -1,0 +1,27 @@
+name: tacocloud36
+services:
+  mongo:
+    image: mongo:7.0.15
+    command: ["mongod", "--replSet", "tc36", "--bind_ip_all", "--port", "27036"]
+    ports: ["127.0.0.1:27036:27036"]
+    volumes: ["mongo36:/data/db"]
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet --port 27036 --eval 'try { if (!rs.status().ok) quit(1); } catch(e) { rs.initiate({_id: \"tc36\", members: [{_id: 0, host: \"127.0.0.1:27036\"}]}); quit(1); }'"]
+      interval: 3s
+      timeout: 10s
+      retries: 30
+  rabbit:
+    image: rabbitmq:3.13.7-management
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBIT_USER:?Run scripts/levantar-tacocloud.sh first}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_PASSWORD:?Run scripts/levantar-tacocloud.sh first}
+    ports: ["127.0.0.1:5678:5672", "127.0.0.1:15678:15672"]
+    volumes: ["rabbit36:/var/lib/rabbitmq"]
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 3s
+      timeout: 10s
+      retries: 30
+volumes:
+  mongo36:
+  rabbit36:

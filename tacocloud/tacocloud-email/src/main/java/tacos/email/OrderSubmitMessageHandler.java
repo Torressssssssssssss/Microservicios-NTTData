@@ -2,7 +2,7 @@ package tacos.email;
 
 import java.util.Map;
 
-import org.springframework.integration.core.GenericHandler;
+import org.springframework.integration.handler.GenericHandler;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;

@@ -1,42 +1,67 @@
 server:
   port: 8081
-
----
 spring:
-  config:
-    activate:
-      on-profile: jms-template, jms-listener
-# The values given here are actually the default values. But they are explicitly
-# set here as an example of setting the Artemis properties.
-  jms:
+  profiles:
+    default: dev
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/tacocloud?replicaSet=rs0}
+    rest:
+      base-path: /data-api
+  rabbitmq:
+    host: ${RABBIT_HOST:localhost}
+    port: ${RABBIT_PORT:5672}
+    username: ${RABBIT_USER:guest}
+    password: ${RABBIT_PASSWORD:guest}
+    publisher-confirm-type: correlated
+    publisher-returns: true
     template:
-      receive-timeout: 2
-  artemis:
-    host: localhost
-    port: 61616
-    user: tacoweb
-    password: letm31n
-    embedded:
-      enabled: false
-    
----
-spring:
-  config:
-    activate:
-      on-profile: kafka-listener
-    
+      mandatory: true
   kafka:
-    bootstrap-servers:
-    - localhost:9092
-    template:
-      default-topic: tacocloud.orders.topic
-    consumer:
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      group-id: tacocloud_kitchen
-      properties:
-        spring.json.trusted.packages: tacos
-      
-      
-      
-      
-      
+    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+  artemis:
+    mode: native
+    broker-url: ${JMS_URL:tcp://localhost:61616}
+    user: ${JMS_USER:}
+    password: ${JMS_PASSWORD:}
+  boot:
+    admin:
+      client:
+        enabled: false
+management:
+  health:
+    rabbit:
+      enabled: false
+    jms:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+      roles: ADMIN
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,mongo,outbox
+taco:
+  api:
+    allowed-origin: ${TACO_ALLOWED_ORIGIN:http://localhost:8080}
+tacocloud:
+  messaging:
+    transport: ${TACO_TRANSPORT:noop}
+    destination: ${TACO_DESTINATION:tacocloud.orders}
+  time-zone: America/Mexico_City
+  max-quantity: 50
+  max-page-size: 100
+  rating:
+    minimum-votes: 2
+  coupons:
+    codes: {}

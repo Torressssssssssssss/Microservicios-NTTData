@@ -1,17 +1,12 @@
 package tacos.messaging;
-
 import org.springframework.stereotype.Service;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Value;
+import java.util.concurrent.CompletionStage;
 
-import lombok.extern.slf4j.Slf4j;
-import tacos.TacoOrder;
-
-@Service
-@Slf4j
-public class NoOpOrderMessagingService
-       implements OrderMessagingService {
+@Service @ConditionalOnProperty(name="tacocloud.messaging.transport",havingValue="noop")
+public class NoOpOrderMessagingService implements OrderMessagingService {
+  @Value("${tacocloud.messaging.destination:tacocloud.orders}") private String destination;
   
-  public void sendOrder(TacoOrder order) {
-    log.info("Sending order to kitchen: " + order);
-  }
-  
+  public CompletionStage<Void> sendOrder(OrderEvent event) { return java.util.concurrent.CompletableFuture.completedFuture(null); }
 }

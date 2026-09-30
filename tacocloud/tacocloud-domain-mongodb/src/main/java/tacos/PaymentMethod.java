@@ -1,25 +1,14 @@
 package tacos;
-
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import lombok.AccessLevel;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
-
-@Document
-@Data
-@NoArgsConstructor(force=true, access=AccessLevel.PRIVATE)
-@RequiredArgsConstructor
+import lombok.ToString;
+@Data @Document
 public class PaymentMethod {
-
-  @Id
-  private String id;
-  
-  private final User user;
-  private final String ccNumber;
-  private final String ccCVV;
-  private final String ccExpiration;
-  
+  @Id private String id;
+  private String userId;
+  @JsonIgnore @ToString.Exclude private String paymentToken;
+  private String brand;
+  private String last4;
 }

@@ -1,6 +1,6 @@
 package tacos.web;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 
 import org.springframework.boot.context.properties.
                                         ConfigurationProperties;

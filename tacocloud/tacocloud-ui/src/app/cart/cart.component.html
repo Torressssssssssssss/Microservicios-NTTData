@@ -1,3 +1,4 @@
+<p *ngIf="quote && cartItems.length === 0">Orden creada: {{quote.id}}. Total: {{quote.total}} MXN.</p>
 <cloud-title>Order your taco creations</cloud-title>
 
 <p>You've crafted your mouthwatering taco masterpieces. Now, just imagine those
@@ -53,12 +54,12 @@
                 </span>
                 <span *ngIf="(item.taco.ingredients | wraps)?.length == 0">in a bowl</span>
                 </td>
-              <td align="right">{{4.99 * item.quantity | currency}}</td>
+              <td align="right">{{item.lineTotal | currency}}</td>
             </tr>
           </tbody>
           <tfoot>
             <tr>
-              <td colspan="3" align="right">Total:</td>
+              <td colspan="3" align="right">Estimacion MXN:</td>
               <td align="right"><span>{{cartTotal | currency}}</span></td>
             </tr>
           </tfoot>
@@ -143,13 +144,14 @@
       <div class="groupBox groupBoxHalf">
         <div class="groupBoxTitle">Here's how I'll pay...</div>
         <div class="groupBoxContent">
-          <label for="ccNumber">Credit Card #: </label>
-          <input type="text" [(ngModel)]="model.ccNumber" name="ccNumber"/>
-          <br/>
-
-          <label for="ccExpiration">Expiration / CVV: </label>
-          <input type="text" [(ngModel)]="model.ccExpiration" name="ccExpiration"/>
-          <input type="text" [(ngModel)]="model.ccCVV" name="ccCVV" size="4"/>
+          <label>Pago sintetico del laboratorio</label>
+          <input [(ngModel)]="syntheticCard" name="syntheticCard" placeholder="test_4242" />
+          <button type="button" (click)="tokenize()">Crear metodo de pago</button>
+          <label>Metodo tokenizado</label><input [(ngModel)]="model.paymentMethodId" name="paymentMethodId" />
+          <label>Cupon</label><input [(ngModel)]="model.couponCode" name="couponCode" />
+          <button type="button" (click)="getQuote()">Cotizar precio actual</button>
+          <p *ngIf="quote">Total confirmado: {{quote.total}} {{quote.currency}}</p>
+          <p role="alert">{{error}}</p>
         </div>
       </div>
 

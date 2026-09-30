@@ -1,0 +1,28 @@
+name: Retos 01-36
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - uses: browser-actions/setup-chrome@v1
+        id: chrome
+        with:
+          chrome-version: stable
+      - name: Unit, Mongo, Rabbit, HTTP, OpenAPI and browser tests
+        run: bash scripts/verificar-retos.sh
+        env:
+          TACO_BROWSER_EXECUTABLE: ${{ steps.chrome.outputs.chrome-path }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports
+          path: |
+            tacocloud/**/target/surefire-reports/
+            tacocloud/**/target/failsafe-reports/

@@ -3,6 +3,7 @@
 <p>We provide a palette of fresh ingredients...you provide the inspiration! Select the
   components that will come together as your crowning achievement of taco workmanship.</p>
 
+<p role="alert">{{error}}</p>
 <form (ngSubmit)="onSubmit()">
   <div class="ingredientsblock" style="text-align: center; width: 100%;">
     <group-box title="Record your wrap">
@@ -36,6 +37,8 @@
     </group-box>
   </div>
 
+  <label><input type="checkbox" [(ngModel)]="model.beverage" name="beverage"> Include beverage</label>
+  <label><input type="checkbox" [(ngModel)]="model.vegan" name="vegan"> Vegan ingredients only</label>
   <div style="text-align:center; width:100%;">
     <big-button label="Construct this taco"></big-button>
   </div>

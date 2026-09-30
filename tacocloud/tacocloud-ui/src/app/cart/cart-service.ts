@@ -24,6 +24,13 @@ export class CartService {
     return total;
   }
 
+  orderItems() {
+    return this.items$.filter(item => Number(item.quantity) > 0).map(item => ({
+      taco: {name: item.taco.name, ingredientIds: item.taco.ingredients.map(i => i.id), beverage: !!item.taco.beverage},
+      quantity: Number(item.quantity)
+    }));
+  }
+
   emptyCart() {
     this.items$ = [];
   }

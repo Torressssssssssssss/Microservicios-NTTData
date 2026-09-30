@@ -1,33 +1,15 @@
 package tacos.messaging;
-
-import jakarta.jms.JMSException;
-import jakarta.jms.Message;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
-
-import tacos.TacoOrder;
-
-@Service
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Value;
+import java.util.concurrent.CompletionStage;
+import org.springframework.jms.core.JmsTemplate;
+@Service @ConditionalOnProperty(name="tacocloud.messaging.transport",havingValue="jms")
 public class JmsOrderMessagingService implements OrderMessagingService {
-
-  private JmsTemplate jms;
-
-  @Autowired
-  public JmsOrderMessagingService(JmsTemplate jms) {
-    this.jms = jms;
-  }
-
-  @Override
-  public void sendOrder(TacoOrder order) {
-    jms.convertAndSend("tacocloud.order.queue", order,
-        this::addOrderSource);
-  }
-  
-  private Message addOrderSource(Message message) throws JMSException {
-    message.setStringProperty("X_ORDER_SOURCE", "WEB");
-    return message;
-  }
-
+  @Value("${tacocloud.messaging.destination:tacocloud.orders}") private String destination;
+  private final JmsTemplate template;
+  public JmsOrderMessagingService(JmsTemplate template) { this.template=template; }
+  public CompletionStage<Void> sendOrder(OrderEvent event) { java.util.concurrent.CompletableFuture<Void> result=new java.util.concurrent.CompletableFuture<>();
+    try { template.convertAndSend(destination,new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(event),message->{message.setJMSCorrelationID(event.getCorrelationId());return message;});result.complete(null); }
+    catch(Exception e) { result.completeExceptionally(e); } return result; }
 }

@@ -8,3 +8,19 @@ input.formField {
 group-box {
   width:1000px;
 }
+
+button {
+  background-color: rgba(118, 214, 255, 0.25);
+  border: 1px solid #76D6FF;
+  border-radius: 10px;
+  color: #003366;
+  cursor: pointer;
+  font-size: 16pt;
+  font-weight: bold;
+  margin: 8px 0 20px;
+  padding: 8px 16px;
+}
+
+button:disabled {cursor: wait;opacity: 0.55;}
+.error {color: #a40000;font-weight: bold;}
+.success {color: #146b2e;font-weight: bold;}

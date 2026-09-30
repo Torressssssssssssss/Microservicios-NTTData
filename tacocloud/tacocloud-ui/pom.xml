@@ -70,7 +70,7 @@
               <goal>npm</goal>
             </goals>
             <configuration>
-              <arguments>install</arguments>
+              <arguments>ci --no-audit --no-fund</arguments>
             </configuration>
           </execution>
           <execution>
@@ -88,7 +88,7 @@
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
         <configuration>
-          <outputDirectory> ${project.build.outputDirectory}\static</outputDirectory>
+          <outputDirectory>${project.build.outputDirectory}/static</outputDirectory>
         </configuration>
       </plugin>
     </plugins>

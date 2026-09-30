@@ -1,46 +1,41 @@
 <cloud-title>Sign in to Taco Cloud</cloud-title>
 
-<p style="font-weight: bold; color: red;">
-  The sign in and security features of this version of Taco Cloud are not
-  yet implemented. The forms presented below do absolutely nothing...yet.
-  Stay tuned.
-</p>
+<p class="success" *ngIf="message">{{message}}</p>
 
 <group-box title="Sign in">
-  <form>
-    <label for="username"><b>Username:</b></label><br/>
-    <input type="text" name="username" class="formField"/><br/>
-    <label for="password"><b>Password:</b></label><br/>
-    <input type="password" name="password" class="formField"/><br/><br/>
-    <big-button label="Sign in"></big-button>
+  <form (ngSubmit)="signIn()">
+    <label for="loginUsername"><b>Username:</b></label><br/>
+    <input id="loginUsername" type="text" name="loginUsername" [(ngModel)]="loginModel.username" class="formField" autocomplete="username" required/><br/>
+    <label for="loginPassword"><b>Password:</b></label><br/>
+    <input id="loginPassword" type="password" name="loginPassword" [(ngModel)]="loginModel.password" class="formField" autocomplete="current-password" required/><br/><br/>
+    <p class="error" role="alert">{{loginError}}</p>
+    <button type="submit" [disabled]="busy">{{busy ? 'Processing...' : 'Sign in'}}</button>
   </form>
 </group-box>
 
 <group-box title="Register">
-  <form>
-    <label for="username"><b>Username:</b></label><br/>
-    <input type="text" name="username" class="formField"/><br/>
-    <label for="password"><b>Password:</b></label><br/>
-    <input type="password" name="password" class="formField"/><br/><br/>
-    <label for="password"><b>(verify password)</b></label><br/>
-    <input type="password" name="verifyPassword" class="formField"/><br/><br/>
-
-    <label for="fullName"><b>Full name:</b></label><br/>
-    <input type="text" name="fullName" class="formField"/><br/><br/>
-
+  <form (ngSubmit)="register()">
+    <label for="registerUsername"><b>Username:</b></label><br/>
+    <input id="registerUsername" type="text" name="registerUsername" [(ngModel)]="registrationModel.username" class="formField" required/><br/>
+    <label for="email"><b>Email:</b></label><br/>
+    <input id="email" type="email" name="email" [(ngModel)]="registrationModel.email" class="formField" required/><br/>
+    <label for="registerPassword"><b>Password:</b></label><br/>
+    <input id="registerPassword" type="password" name="registerPassword" [(ngModel)]="registrationModel.password" class="formField" minlength="10" required/><br/>
+    <label for="verifyPassword"><b>Verify password:</b></label><br/>
+    <input id="verifyPassword" type="password" name="verifyPassword" [(ngModel)]="registrationModel.verifyPassword" class="formField" minlength="10" required/><br/>
+    <label for="fullname"><b>Full name:</b></label><br/>
+    <input id="fullname" type="text" name="fullname" [(ngModel)]="registrationModel.fullname" class="formField"/><br/>
     <label for="street"><b>Street:</b></label><br/>
-    <input type="text" name="street" class="formField"/><br/><br/>
-
-    <label for="city"><b>City / State:</b></label><br/>
-    <input type="text" name="city" class="formField"/><input type="text" name="state" class="formField"/><br/><br/>
-
-    <label for="zipCode"><b>Zip code:</b></label><br/>
-    <input type="text" size="2" name="zipCode" class="formField"/><br/><br/>
-
-    <label for="phoneNumber"><b>Phone number:</b></label><br/>
-    <input type="text" name="phoneNumber" class="formField"/><br/><br/>
-
-
-    <big-button label="Register"></big-button>
+    <input id="street" type="text" name="street" [(ngModel)]="registrationModel.street" class="formField"/><br/>
+    <label for="city"><b>City:</b></label><br/>
+    <input id="city" type="text" name="city" [(ngModel)]="registrationModel.city" class="formField"/><br/>
+    <label for="state"><b>State:</b></label><br/>
+    <input id="state" type="text" name="state" [(ngModel)]="registrationModel.state" class="formField"/><br/>
+    <label for="zip"><b>Zip code:</b></label><br/>
+    <input id="zip" type="text" name="zip" [(ngModel)]="registrationModel.zip" class="formField"/><br/>
+    <label for="phone"><b>Phone number:</b></label><br/>
+    <input id="phone" type="text" name="phone" [(ngModel)]="registrationModel.phone" class="formField"/><br/><br/>
+    <p class="error" role="alert">{{registrationError}}</p>
+    <button type="submit" [disabled]="busy">{{busy ? 'Processing...' : 'Register'}}</button>
   </form>
 </group-box>

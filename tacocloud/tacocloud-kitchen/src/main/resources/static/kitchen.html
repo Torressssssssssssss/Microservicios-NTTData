@@ -1,0 +1,25 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><title>Cocina TacoCloud</title>
+<style>body{font:16px sans-serif;max-width:900px;margin:40px auto}button{margin:8px;padding:10px}article{border:1px solid #aaa;padding:16px;margin:12px 0}</style>
+<h1>Cocina</h1><p>Ingresar con una cuenta KITCHEN. El tiempo mostrado es una estimacion.</p>
+<button id="refresh">Actualizar cola</button><button id="claim">Reclamar siguiente</button><p id="error" role="alert"></p><section id="active"></section><section id="queue"></section>
+<script>
+const error=document.getElementById('error');
+async function api(path,method='GET',body){
+ const token=document.cookie.split('; ').find(x=>x.startsWith('XSRF-TOKEN='));
+ const headers={'Content-Type':'application/json'};if(token)headers['X-XSRF-TOKEN']=decodeURIComponent(token.slice(11));
+ const r=await fetch(path,{method,headers,body:body?JSON.stringify(body):undefined});
+ const data=await r.json();if(!r.ok)throw new Error(data.code||r.status);return data;
+}
+function card(order,active){
+ const box=document.createElement('article');const title=document.createElement('h2');title.textContent=order.id+' | '+order.status;box.append(title);
+ const p=document.createElement('p');p.textContent='ETA: '+order.estimatedPrepMinutes+' minutos';box.append(p);
+ order.items.forEach(i=>{const line=document.createElement('p');line.textContent=i.quantity+' x '+i.taco.name;box.append(line);});
+ if(active){const next={ACCEPTED:'PREPARING',PREPARING:'READY',READY:'OUT_FOR_DELIVERY',OUT_FOR_DELIVERY:'DELIVERED'}[order.status];
+ if(next){const b=document.createElement('button');b.textContent=next;b.onclick=async()=>{try{const updated=await api('/api/v1/kitchen/orders/'+order.id+'/status','PATCH',{status:next,version:order.version,reason:'KITCHEN_UI'});box.replaceWith(card(updated,true));}catch(e){error.textContent=e.message;}};box.append(b);}}
+ return box;
+}
+async function refresh(){try{const orders=await api('/api/v1/kitchen/queue');const q=document.getElementById('queue');q.replaceChildren();orders.forEach(o=>q.append(card(o,false)));}catch(e){error.textContent=e.message;}}
+document.getElementById('refresh').onclick=refresh;
+document.getElementById('claim').onclick=async()=>{try{const o=await api('/api/v1/kitchen/orders/claim','POST',{});document.getElementById('active').append(card(o,true));refresh();}catch(e){error.textContent=e.message;}};
+refresh();
+</script></html>

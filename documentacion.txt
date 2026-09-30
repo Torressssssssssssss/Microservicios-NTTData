@@ -1,445 +1,1350 @@
-DOCUMENTACION DE RETOS FUNCIONALES TACOCLOUD: TC-01 A TC-05
-Fecha: 2026-09-14
+DOCUMENTACION DE RETOS FUNCIONALES TACOCLOUD: TC-01 A TC-36
+Fecha de actualizacion: 2026-09-29
 Carpeta: /home/torres/NTT/Microservicios-NTTData
 
 ALCANCE GENERAL
 
-Se implementan los cinco primeros retos del documento
-TacoCloud_Retos_Funcionales_Estudiantes.docx. El documento se utiliza como
-especificacion del curso. Los retos posteriores no forman parte del cambio.
-Todos los comentarios agregados y este documento estan sin tildes y sin emojis.
-No se modifican las operaciones de correo ni de publicacion: TC-06 y TC-07.
-No se crean commits ni se descartan cambios del usuario.
+Se revisan Manual_Tecnico_TacoCloud.docx y TacoCloud_Retos_Funcionales_Estudiantes.docx como
+documentos de referencia del curso. Esta version
+sustituye el alcance anterior de cinco retos y su auditoria provisional. Conserva el formato por
+tareas: problema, solucion, contrato, pruebas, archivos, comando, ejemplo y resultado. Los
+comentarios nuevos y este TXT no contienen tildes ni emojis.
+
+LOGICA GENERAL DEL PROGRAMA
+
+El cliente consulta ingredientes o tacos publicados, se registra e inicia sesion. Disena un taco o
+elige uno existente, indica cantidades y obtiene un metodo de pago sintetico. El servidor valida
+reglas, consulta precios, aplica un cupon y cotiza. Al confirmar una compra con Idempotency-Key,
+Mongo guarda en una transaccion la clave, la reserva de stock, la orden y su evento outbox. Un
+proceso entrega el evento a RabbitMQ. El consumidor mantiene una proyeccion durable de cocina y
+deduplica eventId. Cocina reclama la siguiente orden y avanza su estado. Cancelar antes de
+preparacion libera inventario una sola vez. Historial, favoritos y votos quedan asociados a la
+identidad autenticada.
 
 INDICE DE TAREAS
 
-Tarea 1: TC-01: ACTUALIZACION REACTIVA DE INGREDIENTES
-Tarea 2: TC-02: ELIMINACION REACTIVA DE INGREDIENTES
-Tarea 3: TC-03: LOCATION BASADO EN LA PETICION
-Tarea 4: TC-04: PATCH CONTROLADO DE ORDENES
-Tarea 5: TC-05: IDENTIDAD, REEMPLAZO Y ELIMINACION DE ORDENES
+Tarea 1: TC-01: ACTUALIZAR UN INGREDIENTE SIN PERDER EL PUBLISHER
+Tarea 2: TC-02: ELIMINAR DE VERDAD Y RESPONDER CON SEMANTICA HTTP
+Tarea 3: TC-03: CONSTRUIR LOCATION SIN LOCALHOST NI RUTAS ROTAS
+Tarea 4: TC-04: PATCH DE ORDENES CON LISTA BLANCA Y SIN ZIP MUTANTE
+Tarea 5: TC-05: PUT Y DELETE DE ORDENES CON IDENTIDAD CONSISTENTE
+Tarea 6: TC-06: CONVERTIR ORDENES DE CORREO SIN CARRERAS NI NULLS SORPRESA
+Tarea 7: TC-07: UNA SOLA SUSCRIPCION PARA GUARDAR Y PUBLICAR
+Tarea 8: TC-08: SEPARAR DTOS DE ENTRADA, RESPUESTA Y PERSISTENCIA
+Tarea 9: TC-09: VALIDACION Y ERRORES TIPO PROBLEM DETAILS
+Tarea 10: TC-10: REGISTRO REACTIVO CON CONTRASENAS PROTEGIDAS
+Tarea 11: TC-11: AUTORIZACION DENY-BY-DEFAULT Y ROLES UTILES
+Tarea 12: TC-12: TOKENIZAR PAGO Y ELIMINAR PAN/CVV DEL DOMINIO
+Tarea 13: TC-13: CATALOGO CON PRECIO, DISPONIBILIDAD Y STOCK
+Tarea 14: TC-14: CALCULAR PRECIOS Y CANTIDADES DEL LADO SERVIDOR
+Tarea 15: TC-15: MOTOR DE CUPONES CON REGLAS Y FECHA DE EXPIRACION
+Tarea 16: TC-16: RESERVAR Y LIBERAR INVENTARIO SIN VENDER AIRE
+Tarea 17: TC-17: ETIQUETAS DIETARIAS, ALERGENOS Y NIVEL DE PICANTE
+Tarea 18: TC-18: TACO PHYSICS: REGLAS COMPONIBLES DE DISENO
+Tarea 19: TC-19: BUSCAR, FILTRAR, ORDENAR Y PAGINAR TACOS
+Tarea 20: TC-20: TACO DEL DIA DETERMINISTA Y COMPROBABLE
+Tarea 21: TC-21: FAVORITOS POR USUARIO SIN CONFIAR EN USERID DEL CLIENTE
+Tarea 22: TC-22: CALIFICACIONES Y RANKING DE TACOS
+Tarea 23: TC-23: HISTORIAL PAGINADO Y PRIVADO DE ORDENES
+Tarea 24: TC-24: REORDENAR UNA COMPRA ANTERIOR CON REGLAS ACTUALES
+Tarea 25: TC-25: FLUJO DE ESTADOS DE UNA ORDEN
+Tarea 26: TC-26: COLA DE COCINA, CLAIM ATOMICO Y TIEMPO ESTIMADO
+Tarea 27: TC-27: CONTRATO UNICO DE EVENTOS DE ORDEN
+Tarea 28: TC-28: ELEGIR BROKER EN RUNTIME, NO EDITANDO EL POM
+Tarea 29: TC-29: OUTBOX TRANSACCIONAL PARA NO PERDER ORDENES
+Tarea 30: TC-30: CONSUMIDOR IDEMPOTENTE, RETRY LIMITADO Y DLQ
+Tarea 31: TC-31: CORRELATION ID DE HTTP A EVENTO Y LOGS
+Tarea 32: TC-32: METRICAS Y SALUD QUE EXPLICAN EL NEGOCIO
+Tarea 33: TC-33: REEMPLAZAR NOTES POR ANUNCIOS OPERATIVOS SEGUROS
+Tarea 34: TC-34: IDEMPOTENCY-KEY EN CREACION DE ORDENES
+Tarea 35: TC-35: VERSIONAR LA API Y PUBLICAR CONTRATO OPENAPI
+Tarea 36: TC-36: SUITE DE INTEGRACION QUE DETENGA REGRESIONES REALES
 
-Cada tarea incluye problema, solucion, contrato, archivos, pruebas, comando,
-ejemplo HTTP y resultado. Los archivos compartidos aparecen en cada tarea
-que los utiliza. La prueba de ADMIN y orden antigua participa en TC-04/TC-05.
-
-==============================================================================
-TAREA 1 - TC-01: ACTUALIZACION REACTIVA DE INGREDIENTES
-==============================================================================
+==========================================================================================
+TAREA 1 - TC-01: ACTUALIZAR UN INGREDIENTE SIN PERDER EL PUBLISHER
+==========================================================================================
 
 Problema original:
-El PUT devolvia void y descartaba repo.save(). Un publisher reactivo describe
-una operacion; descartar el publisher no ejecuta la escritura. Una diferencia
-entre ID de ruta y cuerpo producia una excepcion interna, no un error 400.
+PUT descartaba el publisher de guardado.
 
 Solucion:
-PUT /api/ingredients/{id} devuelve Mono<ResponseEntity<Ingredient>>.
-Mono.defer aplaza validacion y acceso al repositorio hasta la suscripcion.
-Se exige que el ID del cuerpo coincida con la ruta, incluyendo rechazo de ID
-nulo. Nombre no vacio y tipo son obligatorios. Se consulta existencia antes de
-guardar. La escritura pertenece al flatMap de la cadena que recibe Spring.
+El controlador devuelve Mono<ResponseEntity<IngredientResponse>>. Mono.defer comprueba el ID;
+findById precede a save. No crea documentos ausentes ni ejecuta suscripciones manuales.
 
 Contrato:
-200: ingrediente actualizado en el cuerpo JSON.
-400: identidad inconsistente, nombre vacio, tipo ausente o JSON invalido.
-404: ingrediente inexistente; no se guarda ni se crea un documento.
-No se agregan block(), subscribe() ni metodos void para ejecutar esta operacion.
+200 actualizado; 400 ID contradictorio o cuerpo invalido; 404 ausente.
 
 Pruebas:
-Estados 200/400/404 mediante MockMvc y despacho asincrono del Mono.
-StepVerifier comprueba emision y finalizacion.
-Una escritura simulada con Mono.defer comprueba ausencia de efecto antes de la
-suscripcion, ejecucion posterior y una sola invocacion de save.
-La prueba de integracion comprueba el cambio por GET contra MongoDB real.
+FunctionalChallengesTest#ingredientPutIsLazyAndCompletes+ingredientPutHttpContracts
+IngredientMongoIT
 
 Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
-- tacocloud/tacocloud-api/src/main/java/tacos/web/api/IngredientController.java
-- tacocloud/tacocloud-api/pom.xml
-- tacocloud/tacocloud-api/src/test/java/tacos/web/api/FunctionalChallengesTest.java
-- tacocloud/tacocloud-api/src/test/java/tacos/web/api/integration/IngredientMongoIT.java
+web/api/IngredientController.java
 
-Pruebas automatizadas de esta tarea:
-- ingredientPutIsLazyAndCompletes
-- ingredientPutHttpContracts
-
-Comando para ejecutar las pruebas de esta tarea con Java 21:
-mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am clean test "-Dtest=FunctionalChallengesTest#ingredientPutIsLazyAndCompletes+ingredientPutHttpContracts" -Dsurefire.failIfNoSpecifiedTests=false -Dlombok.version=1.18.36 -Dbyte-buddy.version=1.14.19
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
 
 Ejemplo HTTP de esta tarea:
-Ajustar host, puerto e identificadores. Utilizar solo datos sinteticos.
-
-Actualizar:
-curl -i -X PUT http://localhost:8080/api/ingredients/TEST-WRAP -H 'Content-Type: application/json' -d '{"id":"TEST-WRAP","name":"Tortilla actualizada","type":"WRAP"}'
-Esperado: 200. GET posterior muestra el nombre actualizado.
+PUT /api/v1/ingredients/COTO
+{"id":"COTO","name":"Corn tortilla","type":"WRAP"}
 
 Resultado y pendientes de esta tarea:
-Las pruebas rapidas indicadas pasaron en la ejecucion final de la suite.
-La prueba compartida IngredientMongoIT cubre esta tarea con persistencia
-real, pero no pudo iniciar: Docker no esta disponible en este equipo.
-La regresion que descarta el publisher de save fallo como se esperaba: el
-efecto de escritura no ocurre aunque termine la cadena de respuesta.
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
 
-==============================================================================
-TAREA 2 - TC-02: ELIMINACION REACTIVA DE INGREDIENTES
-==============================================================================
+==========================================================================================
+TAREA 2 - TC-02: ELIMINAR DE VERDAD Y RESPONDER CON SEMANTICA HTTP
+==========================================================================================
 
 Problema original:
-El DELETE era void y descartaba repo.deleteById(), por lo que no garantizaba
-el efecto ni diferenciaba recursos ausentes.
+DELETE devolvia void sin ejecutar el borrado reactivo.
 
 Solucion:
-DELETE /api/ingredients/{id} devuelve Mono<ResponseEntity<Void>>.
-Busqueda, error de ausencia y eliminacion estan encadenados. thenReturn genera
-la respuesta solo al finalizar deleteById. No hay try/catch sincronico.
-GET por ID tambien devuelve 404 si falta el ingrediente, para que se pueda
-observar la desaparicion y seguir el contrato de los retos.
+Se encadenan busqueda, error si no existe, deleteById y respuesta vacia. El efecto termina antes de
+responder.
 
 Contrato:
-204 sin cuerpo cuando termina la eliminacion.
-404 si el ID no existe, incluyendo una segunda eliminacion del mismo ID.
-La operacion es idempotente: repetirla no cambia el efecto final, aunque el
-estado HTTP de la segunda respuesta sea diferente.
+204 sin cuerpo; segunda eliminacion 404; GET posterior 404.
 
 Pruebas:
-El repositorio simulado cambia un indicador de presencia al suscribirse.
-Se verifica 204, cuerpo vacio, efecto terminado, GET posterior 404, segundo
-DELETE 404 y exactamente una eliminacion. ID ausente no invoca deleteById.
-Se agrega tambien una prueba de persistencia real en IngredientMongoIT.
+FunctionalChallengesTest#ingredientDeleteWaitsForEffectAndSecondCallIs404
+IngredientMongoIT
 
 Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
-- tacocloud/tacocloud-api/src/main/java/tacos/web/api/IngredientController.java
-- tacocloud/tacocloud-api/src/test/java/tacos/web/api/FunctionalChallengesTest.java
-- tacocloud/tacocloud-api/src/test/java/tacos/web/api/integration/IngredientMongoIT.java
+web/api/IngredientController.java
 
-Pruebas automatizadas de esta tarea:
-- ingredientDeleteWaitsForEffectAndSecondCallIs404
-
-Comando para ejecutar las pruebas de esta tarea con Java 21:
-mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am clean test "-Dtest=FunctionalChallengesTest#ingredientDeleteWaitsForEffectAndSecondCallIs404" -Dsurefire.failIfNoSpecifiedTests=false -Dlombok.version=1.18.36 -Dbyte-buddy.version=1.14.19
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
 
 Ejemplo HTTP de esta tarea:
-Ajustar host, puerto e identificadores. Utilizar solo datos sinteticos.
-
-Eliminar:
-curl -i -X DELETE http://localhost:8080/api/ingredients/TEST-WRAP
-Esperado: 204; segundo DELETE y GET responden 404.
+DELETE /api/v1/ingredients/TEST-WRAP
 
 Resultado y pendientes de esta tarea:
-Las pruebas rapidas indicadas pasaron en la ejecucion final de la suite.
-La prueba compartida IngredientMongoIT cubre esta tarea con persistencia
-real, pero no pudo iniciar: Docker no esta disponible en este equipo.
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
 
-==============================================================================
-TAREA 3 - TC-03: LOCATION BASADO EN LA PETICION
-==============================================================================
+==========================================================================================
+TAREA 3 - TC-03: CONSTRUIR LOCATION SIN LOCALHOST NI RUTAS ROTAS
+==========================================================================================
 
 Problema original:
-El POST construia http://localhost:8080/ingredients/{id}; faltaba /api y se
-fijaban host, puerto y esquema independientemente de la peticion.
+Location contenia localhost y una ruta incorrecta.
 
 Solucion:
-POST /api/ingredients recibe Ingredient y HttpServletRequest en el runtime
-Spring MVC del proyecto. ServletUriComponentsBuilder.fromRequestUri captura
-la URI antes de entrar en la cadena reactiva. Tras guardar, pathSegment agrega
-el ID realmente devuelto por persistencia y encode protege segmentos de URI.
-No se concatena un URL completo ni se utiliza el ID anterior a persistencia.
-Se valida nombre y tipo antes de guardar. Se responde 201 con cuerpo y Location.
-El controlador ya no contiene la referencia literal localhost:8080.
-
-CORS:
-El origen permitido se mueve a taco.api.allowed-origin en los application.yml
-del modulo API y de la aplicacion. El valor inicial conserva el origen del
-proyecto: http://localhost:8080. No se abre CORS para cualquier origen.
-
-Proxy:
-En despliegue detras de un proxy confiable, utilizar
---server.forward-headers-strategy=framework
-para que Spring procese Forwarded/X-Forwarded-* antes de construir Location.
-El proxy debe controlar esos encabezados. No se habilita confianza global en
-encabezados de clientes directos como parte de este cambio.
-
-Pruebas:
-URI con HTTPS, host distinto, puerto 9443 y context path /course.
-ID asignado por persistencia distinto del de entrada y GET siguiendo Location.
-Encabezados X-Forwarded-Host, X-Forwarded-Proto y X-Forwarded-Prefix mediante
-ForwardedHeaderFilter en MockMvc.
-Body invalido produce 400 sin escritura.
-La prueba de integracion utiliza servidor MVC con puerto aleatorio y /course.
-
-Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
-- tacocloud/tacocloud-api/src/main/java/tacos/web/api/IngredientController.java
-- tacocloud/tacocloud-api/src/main/resources/application.yml
-- tacocloud/tacocloud/src/main/resources/application.yml
-- tacocloud/tacocloud-api/src/test/java/tacos/web/api/FunctionalChallengesTest.java
-- tacocloud/tacocloud-api/src/test/java/tacos/web/api/integration/IngredientMongoIT.java
-
-Pruebas automatizadas de esta tarea:
-- locationUsesRequestAndPersistedId
-- locationSupportsForwardedHeaders
-
-Comando para ejecutar las pruebas de esta tarea con Java 21:
-mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am clean test "-Dtest=FunctionalChallengesTest#locationUsesRequestAndPersistedId+locationSupportsForwardedHeaders" -Dsurefire.failIfNoSpecifiedTests=false -Dlombok.version=1.18.36 -Dbyte-buddy.version=1.14.19
-
-Ejemplo HTTP de esta tarea:
-Ajustar host, puerto e identificadores. Utilizar solo datos sinteticos.
-
-Crear ingrediente:
-curl -i -X POST http://localhost:8080/api/ingredients -H 'Content-Type: application/json' -d '{"id":"TEST-WRAP","name":"Tortilla prueba","type":"WRAP"}'
-Esperado: 201 y Location hacia /api/ingredients/TEST-WRAP.
-
-Resultado y pendientes de esta tarea:
-Las pruebas rapidas indicadas pasaron en la ejecucion final de la suite.
-La prueba compartida IngredientMongoIT cubre esta tarea con persistencia
-real, pero no pudo iniciar: Docker no esta disponible en este equipo.
-
-==============================================================================
-TAREA 4 - TC-04: PATCH CONTROLADO DE ORDENES
-==============================================================================
-
-Problema original:
-Se recibia TacoOrder completo, se permitia cambiar pago, faltaba autorizacion
-y deliveryZip se tomaba incorrectamente de deliveryState.
-
-Solucion:
-PATCH /api/orders/{orderId} recibe OrderPatchRequest, no TacoOrder.
-Lista blanca: deliveryName, deliveryStreet, deliveryCity, deliveryState,
-deliveryZip. Los campos omitidos o nulos no se modifican. No hay reflection
-ni copia masiva de propiedades. JsonAnySetter rechaza campos desconocidos,
-incluso si su valor es null: no hay descarte silencioso de campos protegidos.
-OrderService consulta, autoriza, aplica los campos explicitamente, valida el
-resultado y realiza una unica escritura. ZIP se copia de deliveryZip.
-Los cinco datos de entrega resultantes deben ser no nulos y no vacios.
-
-Autorizacion:
-Authentication debe estar autenticado y no ser AnonymousAuthenticationToken.
-Solo el propietario identificado por username o una autoridad ROLE_ADMIN
-puede modificar la orden. No se acepta userId ni usuario en el body.
-Ordenes sin propietario solo pueden modificarse por ADMIN.
+ServletUriComponentsBuilder usa la peticion, su contexto y el ID devuelto por persistencia. Se
+valida el DTO antes de escribir.
 
 Contrato:
-200: orden actualizada.
-400: campo prohibido, JSON invalido o datos de entrega resultantes vacios.
-403: usuario ajeno o peticion sin identidad autenticada.
-404: orden ausente. Se mantiene la busqueda antes de la comprobacion de acceso.
+201 con Location que puede consultarse por GET; 400 sin escritura cuando el cuerpo es invalido.
 
 Pruebas:
-ZIP y estado se modifican independientemente.
-Rechazo de id, user, placedAt, total, status, ccNumber, ccExpiration, ccCVV,
-tacos, incluyendo null. Validacion de ZIP vacio.
-Propietario, usuario ajeno, ausencia de autenticacion, ADMIN y recurso ausente.
-Se verifica ausencia de save en rechazos y una escritura por cambio valido.
+FunctionalChallengesTest#locationUsesRequestAndPersistedId+locationSupportsForwardedHeaders+errorsAr
+eSafeAndMassAssignmentIsRejected
+IngredientMongoIT
 
 Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
-- tacocloud/tacocloud-api/src/main/java/tacos/web/api/OrderApiController.java
-- tacocloud/tacocloud-api/src/main/java/tacos/web/api/OrderPatchRequest.java
-- tacocloud/tacocloud-api/src/main/java/tacos/web/api/OrderService.java
-- tacocloud/tacocloud-api/src/test/java/tacos/web/api/FunctionalChallengesTest.java
+web/api/IngredientController.java
 
-Pruebas automatizadas de esta tarea:
-- patchZipAndStateAreIndependent
-- patchRejectsProtectedFieldsAndInvalidResults
-- patchChecksOwnershipAndExistence
-- adminCanPatchAndDeleteLegacyOrder
-
-Comando para ejecutar las pruebas de esta tarea con Java 21:
-mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am clean test "-Dtest=FunctionalChallengesTest#patchZipAndStateAreIndependent+patchRejectsProtectedFieldsAndInvalidResults+patchChecksOwnershipAndExistence+adminCanPatchAndDeleteLegacyOrder" -Dsurefire.failIfNoSpecifiedTests=false -Dlombok.version=1.18.36 -Dbyte-buddy.version=1.14.19
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
 
 Ejemplo HTTP de esta tarea:
-Ajustar host, puerto e identificadores. Utilizar solo datos sinteticos.
-
-PATCH de orden del usuario autenticado:
-curl -i -u "$TACO_USER:$TACO_PASSWORD" -X PATCH http://localhost:8080/api/orders/ORDER_ID -H 'Content-Type: application/json' -d '{"deliveryZip":"54321"}'
-Esperado: 200 si es propietario; deliveryState se conserva.
-No utilizar credenciales reales en archivos del repositorio ni en evidencias.
+POST /api/v1/ingredients
+{"id":"TEST-WRAP","name":"Tortilla de prueba","type":"WRAP"}
 
 Resultado y pendientes de esta tarea:
-Las pruebas rapidas indicadas pasaron en la ejecucion final de la suite.
-El replay original detecto ZIP incorrecto, campos protegidos aceptados y
-acceso ajeno permitido. La asignacion real de roles queda para TC-11.
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
 
-==============================================================================
-TAREA 5 - TC-05: IDENTIDAD, REEMPLAZO Y ELIMINACION DE ORDENES
-==============================================================================
+==========================================================================================
+TAREA 4 - TC-04: PATCH DE ORDENES CON LISTA BLANCA Y SIN ZIP MUTANTE
+==========================================================================================
 
 Problema original:
-El PUT ignoraba el orderId de la ruta y guardaba el dominio del cuerpo.
-El DELETE descartaba el publisher y usaba try/catch para una operacion asincrona.
-No habia comprobaciones de propietario ni estado de la orden.
+PATCH mezclaba ZIP con estado y aceptaba campos internos.
 
-Solucion de PUT:
-PUT /api/orders/{orderId} recibe OrderReplaceRequest con @Valid.
-El ID opcional del cuerpo debe coincidir con la ruta cuando se proporciona.
-Un ID omitido utiliza la identidad de la ruta. La orden debe existir.
-Solo se reemplazan los cinco datos de entrega y la lista de tacos.
-Se requieren datos de entrega no vacios y lista de tacos no vacia; se validan
-las restricciones existentes de Taco mediante @Valid.
-Se conservan ID, usuario, placedAt, status y los tres datos de pago existentes.
-Campos protegidos o desconocidos producen 400, no se copian a persistencia.
-Se exige propietario o ROLE_ADMIN igual que en PATCH.
-200 al guardar; 400 por entrada invalida; 403 por acceso ajeno; 404 por ausencia.
-PUT no crea ordenes nuevas. No se calcula precio ni se incorpora TC-14.
+Solucion:
+OrderPatchRequest solo permite direccion. Los campos desconocidos generan 400. El servicio comprueba
+propietario o ADMIN, estado CREATED y restricciones de direccion; guarda una sola vez.
 
-Solucion de DELETE:
-DELETE /api/orders/{orderId} compone busqueda, autorizacion y deleteById.
-Devuelve 204 sin cuerpo solo al terminar el efecto; 403 por acceso ajeno,
-404 por ausencia y 409 cuando el estado no permite eliminacion fisica.
-
-Estado minimo necesario:
-TacoOrder agrega Status con CREATED, PREPARING, READY, DELIVERED y CANCELLED.
-Las ordenes nuevas inician en CREATED. Las antiguas con estado null se tratan
-como CREATED para esta comprobacion, sin exigir migracion inmediata.
-Solo CREATED/null admite eliminacion fisica, incluso para ADMIN.
-PREPARING, READY, DELIVERED y CANCELLED producen 409. No se implementa aun el
-workflow de estados ni cancelacion distribuida: corresponden a TC-25.
-Los DTOs de PUT/PATCH no permiten que el cliente cambie este estado.
+Contrato:
+200; 400 entrada invalida; 403 orden ajena; 404 ausente; 409 estado no editable.
 
 Pruebas:
-ID contradictorio, ausencia, usuario ajeno, reemplazo valido y preservacion de
-identidad, usuario, fecha, estado y pago. Rechazo de pago y body incompleto.
-DELETE ausente, ajeno, anonimo, PREPARING/READY/DELIVERED/CANCELLED con propietario y ADMIN, CREATED con
-204 tras el efecto y orden antigua sin estado con ADMIN.
+TransactionalChallengesIT#patchZipOwnershipPutIdentityAndDeleteRemainProtected
+RuntimeMvcIT#fullOrderOutboxBrokerRedeliveryAndSafeContract
 
 Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
-- tacocloud/tacocloud-api/src/main/java/tacos/web/api/OrderApiController.java
-- tacocloud/tacocloud-api/src/main/java/tacos/web/api/OrderReplaceRequest.java
-- tacocloud/tacocloud-api/src/main/java/tacos/web/api/OrderService.java
-- tacocloud/tacocloud-domain-mongodb/src/main/java/tacos/TacoOrder.java
-- tacocloud/tacocloud-api/src/test/java/tacos/web/api/FunctionalChallengesTest.java
+web/api/OrderPatchRequest.java business/OrderApplicationService.java
 
-Pruebas automatizadas de esta tarea:
-- putPreservesProtectedValuesAndRejectsRedirect
-- putRejectsPaymentAndInvalidDelivery
-- deleteChecksOwnershipStateAndCompletion
-- adminCanPatchAndDeleteLegacyOrder
-
-Comando para ejecutar las pruebas de esta tarea con Java 21:
-mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am clean test "-Dtest=FunctionalChallengesTest#putPreservesProtectedValuesAndRejectsRedirect+putRejectsPaymentAndInvalidDelivery+deleteChecksOwnershipStateAndCompletion+adminCanPatchAndDeleteLegacyOrder" -Dsurefire.failIfNoSpecifiedTests=false -Dlombok.version=1.18.36 -Dbyte-buddy.version=1.14.19
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
 
 Ejemplo HTTP de esta tarea:
-Ajustar host, puerto e identificadores. Utilizar solo datos sinteticos.
-
-PUT de orden del usuario autenticado:
-curl -i -u "$TACO_USER:$TACO_PASSWORD" -X PUT http://localhost:8080/api/orders/ORDER_ID -H 'Content-Type: application/json' -d '{"id":"ORDER_ID","deliveryName":"Cliente prueba","deliveryStreet":"Calle prueba","deliveryCity":"Ciudad","deliveryState":"ST","deliveryZip":"12345","tacos":[{"name":"Taco prueba","ingredients":[{"id":"TEST-WRAP","name":"Tortilla prueba","type":"WRAP"}]}]}'
-Esperado: 200 si existe y pertenece al usuario; pago y fecha se conservan.
-
-Eliminar orden:
-curl -i -u "$TACO_USER:$TACO_PASSWORD" -X DELETE http://localhost:8080/api/orders/ORDER_ID
-Esperado: 204 si es propietario y CREATED; 409 si esta en PREPARING.
+PATCH /api/v1/orders/{id}
+{"deliveryZip":"54321"}
 
 Resultado y pendientes de esta tarea:
-Las pruebas rapidas indicadas pasaron en la ejecucion final de la suite.
-El replay original detecto DELETE sin contrato de ausencia y PUT con body
-Mono incompatible con MVC. El workflow completo queda para TC-25.
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
 
-==============================================================================
-CONFIGURACION Y VALIDACION COMPARTIDAS
-==============================================================================
+==========================================================================================
+TAREA 5 - TC-05: PUT Y DELETE DE ORDENES CON IDENTIDAD CONSISTENTE
+==========================================================================================
 
-Dependencias comunes de pruebas:
-reactor-test para StepVerifier;
-Testcontainers mongodb y junit-jupiter 1.16.3 para Mongo real sin instalarlo.
-El perfil integration incorpora maven-failsafe-plugin para ejecutar *IT.
-Las pruebas rapidas no necesitan MongoDB, Docker ni brokers locales.
+Problema original:
+PUT podia apuntar a otro ID y DELETE no esperaba el efecto.
 
-COMANDOS REPRODUCIBLES
+Solucion:
+PUT conserva ID, propietario, fecha y pago. Recalcula items y reserva dentro de una transaccion.
+DELETE solo permite propietario/ADMIN en CREATED, libera reserva y registra CANCELLED en outbox
+antes de borrar.
 
-Ejecutar desde /home/torres/NTT/Microservicios-NTTData.
+Contrato:
+PUT 200; DELETE 204; 400 identidad/pago; 403 ajeno; 404 ausente; 409 estado incompatible.
 
-Con JDK 11, compatible con el proyecto base:
-mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am clean test
+Pruebas:
+TransactionalChallengesIT#patchZipOwnershipPutIdentityAndDeleteRemainProtected+staleStatusVersionAnd
+FifoClaimAreEnforced
 
-En este equipo, con Java 21:
-mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am clean test -Dlombok.version=1.18.36 -Dbyte-buddy.version=1.14.19
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/OrderApplicationService.java business/WorkflowService.java web/api/OrderApiController.java
 
-Solo un subconjunto:
-mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am test -Dtest=FunctionalChallengesTest -Dsurefire.failIfNoSpecifiedTests=false -Dlombok.version=1.18.36 -Dbyte-buddy.version=1.14.19
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
 
-Pruebas rapidas mas integracion MongoDB con Docker disponible:
-mvn -B -f tacocloud/pom.xml -pl tacocloud-api -am verify -Pintegration -Dlombok.version=1.18.36 -Dbyte-buddy.version=1.14.19
+Ejemplo HTTP de esta tarea:
+DELETE /api/v1/orders/{id}
 
-Los overrides de Lombok y Byte Buddy son solo argumentos de ejecucion.
-No se cambia Spring Boot 2.5.3, su API ni la version de Java del repositorio.
-El build inicial sin overrides fallo con Java 21 por NoSuchFieldError en
-JCTree$JCImport al usar el Lombok original. No es un defecto de estos retos.
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
 
-LIMITES Y DECISIONES
+==========================================================================================
+TAREA 6 - TC-06: CONVERTIR ORDENES DE CORREO SIN CARRERAS NI NULLS SORPRESA
+==========================================================================================
 
-La configuracion general de seguridad sigue siendo la del baseline, con rutas
-permitAll y contrasenas sin proteccion adaptativa. TC-10 y TC-11 quedan fuera
-del alcance. El servicio protege PUT/PATCH/DELETE aun con esas rutas abiertas:
-sin Authentication valido responde 403. POST, GET y correo conservan su contrato
-original y deben endurecerse en los retos posteriores.
-User del baseline solo concede ROLE_USER. La rama ADMIN del servicio soporta
-ROLE_ADMIN y se verifica con una identidad de prueba; asignar roles reales
-corresponde al trabajo posterior de seguridad.
-POST original no asigna automaticamente un propietario. Para pruebas manuales
-de ordenes debe existir una orden con user consistente; si user falta, el
-servicio no concede acceso como propietario.
-PUT/PATCH siguen devolviendo TacoOrder del baseline. No se resuelve todavia la
-exposicion de datos sensibles del dominio: corresponde a TC-08 y TC-12. No usar
-PAN/CVV reales. Las pruebas solo emplean valores sinteticos.
-Busqueda y escritura no son una transaccion atomica. No se agrega optimistic
-locking ni workflow: una carrera concurrente entre estado y eliminacion debe
-resolverse al evolucionar TC-25. Este cambio verifica el estado observado.
-La compatibilidad de ordenes antiguas sin estado supone que eran CREATED; en
-una migracion productiva se debe revisar esa suposicion.
-No se afirma que pasen los navegadores Angular, los brokers ni todo el reactor
-Maven: la validacion ejecutada se centra en API y sus modulos dependientes.
+Problema original:
+La conversion del correo tenia callbacks anidados y listas incompletas.
 
-REFERENCIAS CONSULTADAS
+Solucion:
+Una unica cadena resuelve usuario, metodo tokenizado, tacos e ingredientes con concatMap y
+collectList. Se conserva el orden de tacos y de ingredientes. No hay block ni subscribe en el
+servicio.
 
-Especificacion: TacoCloud_Retos_Funcionales_Estudiantes.docx, fichas TC-01 a TC-05.
-Project Reactor 3.4.8, Mono: defer, flatMap, switchIfEmpty y thenReturn.
-https://projectreactor.io/docs/core/3.4.8/api/reactor/core/publisher/Mono.html
-Spring Framework 5.3, URI y encabezados forwarded en el runtime Servlet.
-https://docs.spring.io/spring-framework/docs/5.3.13/reference/pdf/web.pdf
+Contrato:
+Error explicito si faltan usuario, pago o ingrediente; no se emite una orden parcial.
 
-RESULTADOS DE EJECUCION
+Pruebas:
+EmailAndContractTest#emailWaitsForAllLookupsAndSubscribesOnce+missingUserPaymentAndIngredientAreCont
+rolled
+TransactionalChallengesIT#emailPlacementSubscribesOnceAndFailuresDoNotPublish
 
-Validacion final: Maven clean test del API y sus dependencias, Java 21 con
-los overrides documentados: BUILD SUCCESS.
-14 pruebas ejecutadas: 12 nuevas en FunctionalChallengesTest y 2 existentes en
-TacoControllerTest. Cero fallos, cero errores y cero pruebas omitidas.
-Los seis modulos del reactor seleccionado compilan correctamente.
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+web/api/EmailOrderService.java web/api/EmailOrder.java
 
-Replay del baseline historico:
-Se cargaron temporalmente los dos controladores originales desde HEAD y se
-adaptaron exclusivamente el constructor del fixture y la prueba que dependia
-del nuevo tipo de retorno. Se ejecutaron diez pruebas HTTP de los cinco retos.
-Resultado original: 10 pruebas, 5 fallos y 5 errores, cero omisiones.
-Se detectaron ZIP incorrecto, acceso ajeno permitido, campos protegidos aceptados,
-DELETE sin contrato 204/404, excepcion interna por IDs contradictorios y
-recepcion de Mono como body incompatible con Spring MVC en POST/PUT originales.
-Se restauraron los controladores y el fixture al terminar la comprobacion.
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
 
-Regresion de publisher descartado:
-Se sustituyo temporalmente el flatMap de save en el PUT de ingredientes por un
-map que invoca save y descarta su Mono. La prueba StepVerifier se ejecuto desde
-compilacion limpia: 1 prueba, 1 fallo, cero errores y cero omisiones.
-El indicador de escritura permanecio false pese a completar la respuesta.
-Se restauro la implementacion y se repitio clean test con las 14 pruebas pasando.
-Estas comprobaciones son replays posteriores, no se afirma que la suite existia
-antes de empezar a editar el proyecto.
+Ejemplo HTTP de esta tarea:
+POST /api/v1/orders/fromEmail
+{"email":"alumno@example.test","tacos":[{"name":"Taco correo","ingredients":["COTO","TMTO"]}]}
 
-Integracion real:
-Se ejecuto verify -Pintegration. Las 14 pruebas rapidas pasaron y se intento
-IngredientMongoIT. Testcontainers fallo antes de iniciar MongoDB:
-IllegalStateException: Could not find a valid Docker environment.
-No se omite silenciosamente esta prueba ni se declara que MongoDB real fue
-validado. Se necesita Docker disponible para completar esa evidencia y el
-smoke test HTTP de persistencia real.
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
 
-No se instalo un JDK ni se modifico el sistema. La descarga temporal de JDK 11
-se interrumpio y se elimino; la validacion efectiva utilizo Java 21 con overrides.
-El comando con JDK 11 queda como ruta recomendada para el baseline, no como
-una ejecucion realizada en este equipo.
+==========================================================================================
+TAREA 7 - TC-07: UNA SOLA SUSCRIPCION PARA GUARDAR Y PUBLICAR
+==========================================================================================
 
-Verificacion de formato:
-git diff --check sin errores. Los comentarios nuevos y documentacion.txt se
-comprobaron sin caracteres no ASCII, tildes ni emojis.
+Problema original:
+Se suscribia manualmente y podian duplicarse guardado y publicacion.
 
-Evidencias de ejecucion conservadas fuera del repositorio, en:
-/home/torres/Documents/Codex/2026-09-14/va/work/tacocloud-verificacion
-Archivos: baseline-build.log, baseline-regression.log,
-baseline-regression-report.txt, publisher-regression.log,
-publisher-regression-report.txt, integration.log y final-tests.log.
+Solucion:
+fromEmail compone conversion y el mismo caso de uso de compra. La transaccion guarda orden, reserva
+y evento outbox. El publisher envia solo despues del commit. Una peticion produce una orden y un
+evento CREATED.
+
+Contrato:
+Fallo de conversion o persistencia no deja orden ni evento. La entrega al broker es al menos una
+vez; no se afirma una transaccion distribuida.
+
+Pruebas:
+TransactionalChallengesIT#emailPlacementSubscribesOnceAndFailuresDoNotPublish+transactionRollsBackPa
+rtialStockAndOrderOnFailure
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/OrderApplicationService.java business/OutboxService.java web/api/OrderApiController.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+POST /api/v1/orders/fromEmail; comprobar una orden y un evento ORDER_CREATED.
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 8 - TC-08: SEPARAR DTOS DE ENTRADA, RESPUESTA Y PERSISTENCIA
+==========================================================================================
+
+Problema original:
+El dominio Mongo era tambien el contrato HTTP y exponia datos internos.
+
+Solucion:
+Requests, Responses y ApiMapper separan entrada y salida. Los requests estrictos rechazan campos
+propiedad del servidor. El mapper solo transforma valores; no consulta repositorios. Las respuestas
+excluyen User, password, PAN, CVV y token.
+
+Contrato:
+Contratos v1 y alias legado. Precio, usuario, fecha, estado e identidad de orden no son asignables
+por POST.
+
+Pruebas:
+BusinessRulesTest#moneyFieldsAndIdentityCannotBeAssigned
+EmailAndContractTest#responseAndEventNeverSerializeSensitiveFieldsAndV1AcceptsExtensions
+OpenApiContractTest
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+api/dto/Requests.java api/dto/Responses.java api/dto/ApiMapper.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+POST /api/v1/orders con total o userId extra: 400.
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 9 - TC-09: VALIDACION Y ERRORES TIPO PROBLEM DETAILS
+==========================================================================================
+
+Problema original:
+Los errores no compartian estructura y podian filtrar excepciones internas.
+
+Solucion:
+ApiProblem y ApiProblemHandler generan type, title, status, detail, instance, code, correlationId y
+violations. Bean Validation valida tamano, formato, cantidades y requeridos. Los errores de reglas
+incluyen codigo y mensaje por violacion.
+
+Contrato:
+400 validacion; 401 autenticacion; 403 autorizacion; 404 ausente; 409 conflicto; 422 regla; 500
+generico sin stacktrace ni driver.
+
+Pruebas:
+FunctionalChallengesTest#errorsAreSafeAndMassAssignmentIsRejected
+OpenApiContractTest
+RuntimeMvcIT
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+web/api/ApiProblemHandler.java web/api/ApiException.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+POST /api/v1/ingredients con nombre vacio devuelve ApiProblem y violations.
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 10 - TC-10: REGISTRO REACTIVO CON CONTRASENAS PROTEGIDAS
+==========================================================================================
+
+Problema original:
+Registro descartaba save y las contrasenas no estaban protegidas.
+
+Solucion:
+RegistrationService normaliza username/email y codifica con DelegatingPasswordEncoder en
+boundedElastic. Comprueba duplicados y usa indices unicos reales para resolver carreras. Los
+endpoints REST y MVC comparten el servicio.
+
+Contrato:
+201 solo despues de persistir; 409 duplicado; hash con prefijo {bcrypt}; ninguna respuesta devuelve
+el hash.
+
+Pruebas:
+SecurityAndRegistrationTest
+TransactionalChallengesIT#concurrentRegistrationUsesUniqueIndexesAndPasswordRemainsPrivate
+RuntimeMvcIT# mvcHttpSecurityRegistrationAndAliasContracts
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+security: RegistrationService.java RegistrationForm.java AuthController.java
+UserRegistrationApi.java; business/PersistenceConfig.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+POST /api/v1/auth/register
+{"username":"alumno","email":"alumno@example.test","password":"clave-laboratorio-123"}
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 11 - TC-11: AUTORIZACION DENY-BY-DEFAULT Y ROLES UTILES
+==========================================================================================
+
+Problema original:
+La regla permitAll global dejaba rutas sensibles abiertas.
+
+Solucion:
+SecurityConfig termina en denyAll. Catalogo GET publico; USER/ADMIN para compras, favoritos y votos;
+ADMIN para catalogo operativo y Actuator; KITCHEN para cocina. Servicios comprueban ownership. Data
+REST queda cerrado. CORS usa un origen configurado y CSRF se exige incluso con Basic.
+
+Contrato:
+401 sin credenciales; 403 rol incorrecto o ruta no listada. La identidad nunca procede de userId
+enviado por el cliente.
+
+Pruebas:
+SecurityAndRegistrationTest#authorizationMatrixAndDefaultDenial
+RuntimeMvcIT#mvcHttpSecurityRegistrationAndAliasContracts
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+security: SecurityConfig.java; business/IdentityService.java business/OrderApplicationService.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+GET /api/v1/kitchen/queue como USER: 403; como KITCHEN: 200.
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 12 - TC-12: TOKENIZAR PAGO Y ELIMINAR PAN/CVV DEL DOMINIO
+==========================================================================================
+
+Problema original:
+Se persistian numero de tarjeta, expiracion y CVV.
+
+Solucion:
+PaymentGateway/FakePaymentGateway acepta solo test_ seguido de cuatro digitos. PaymentMethod guarda
+token, marca y ultimos cuatro; la orden referencia el metodo y solo devuelve marca/last4. El script
+de migracion elimina campos heredados y metodos sin token.
+
+Contrato:
+201 tokenizacion sintetica; 422 dato no sintetico; ningun evento contiene pago. La migracion se
+ejecuta explicitamente sobre la base elegida.
+
+Pruebas:
+BusinessRulesTest#fakePaymentAcceptsSyntheticDataOnlyAndHidesToken
+EmailAndContractTest
+TransactionalChallengesIT#paymentMigrationRemovesLegacySensitiveFieldsFromMongo
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/PaymentGateway.java business/FakePaymentGateway.java; domain: PaymentMethod.java
+TacoOrder.java; scripts/migrate-payment.js
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+POST /api/v1/payment-methods/tokenize
+{"syntheticCard":"test_4242"}
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 13 - TC-13: CATALOGO CON PRECIO, DISPONIBILIDAD Y STOCK
+==========================================================================================
+
+Problema original:
+El catalogo no tenia precio, existencias ni control concurrente.
+
+Solucion:
+Ingredient agrega BigDecimal, disponibilidad, stock, umbral y version. ADMIN modifica metadata con
+version y ajusta stock por delta atomico. La disponibilidad de venta publica es available &&
+stockOnHand > 0. Los seeds contienen tres ingredientes por grupo.
+
+Contrato:
+Precio no negativo con dos decimales; stock nunca negativo; 409 version obsoleta o ajuste imposible.
+Datos de inventario solo en respuestas ADMIN.
+
+Pruebas:
+TransactionalChallengesIT#optimisticLockingAndNegativeStockAreEnforced
+SecurityAndRegistrationTest
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/CatalogService.java api/dto/Requests.java; domain: Ingredient.java; runtime:
+DevelopmentConfig.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+POST /api/v1/admin/ingredients/COTO/stock-adjustments
+{"delta":10}
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 14 - TC-14: CALCULAR PRECIOS Y CANTIDADES DEL LADO SERVIDOR
+==========================================================================================
+
+Problema original:
+El carrito perdia cantidades y calculaba precios fijos en el cliente.
+
+Solucion:
+La UI envia items con quantity. PricingService consulta ingredientes actuales, suma precios en
+BigDecimal y redondea HALF_UP a dos decimales, moneda MXN. Cada linea persiste precio y subtotal
+usados; cambios posteriores del catalogo no reescriben la compra.
+
+Contrato:
+Cantidad 1..max-quantity, limite HTTP 50; cliente no puede imponer total; quote no reserva stock.
+
+Pruebas:
+BusinessRulesTest#pricesUseDecimalQuantitiesAndHistoricalSnapshot+quantityBoundsFailBeforeIngredient
+Lookup
+RuntimeMvcIT#browserCanSignInAddDesignedTacoAndSubmitQuantityTwo
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/PricingService.java; domain: OrderLine.java; UI: cart/cart-service.ts
+cart/cart.component.ts
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+POST /api/v1/orders/quote con quantity: 2 devuelve el doble del subtotal unitario.
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 15 - TC-15: MOTOR DE CUPONES CON REGLAS Y FECHA DE EXPIRACION
+==========================================================================================
+
+Problema original:
+Los cupones estaban fuera del runtime de compras.
+
+Solucion:
+BusinessConfig.Coupons y CouponService soportan FIXED/PERCENTAGE, inicio inclusivo, fin exclusivo,
+minimo y tope. El codigo se normaliza con trim y mayusculas. Se inyecta Clock. Quote aplica las
+mismas reglas que compra y guarda un unico codigo.
+
+Contrato:
+Descuento entre cero y subtotal; desconocido, vencido, futuro o minimo insuficiente:
+COUPON_NOT_APPLICABLE, sin enumerar codigos.
+
+Pruebas:
+BusinessRulesTest#couponsHaveExclusiveExpiryAndCapAtZero+couponMinimumAndStartAreEnforced
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/BusinessConfig.java business/CouponService.java business/PricingService.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+POST /api/v1/orders/quote con couponCode. Configurar tacocloud.coupons.codes externamente.
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 16 - TC-16: RESERVAR Y LIBERAR INVENTARIO SIN VENDER AIRE
+==========================================================================================
+
+Problema original:
+Las compras no descontaban stock de forma segura ante concurrencia.
+
+Solucion:
+InventoryService agrupa cantidades por ingrediente, ordena IDs y usa findAndModify con stock
+suficiente. Reserva, orden y outbox comparten transaccion Mongo. InventoryReservation identifica la
+operacion y marca su liberacion para no duplicarla.
+
+Contrato:
+Fallo parcial revierte todo; dos compradores no venden mas de lo disponible; cancelar antes de
+PREPARING devuelve stock una sola vez.
+
+Pruebas:
+TransactionalChallengesIT#concurrentBuyersCannotOversell+transactionRollsBackPartialStockAndOrderOnF
+ailure+cancellationReleasesOnceAndForbiddenTransitionDoesNotWrite
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/InventoryService.java business/OrderApplicationService.java business/PersistenceConfig.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+Crear dos pedidos simultaneos con stock 1: solo uno puede consumirlo.
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 17 - TC-17: ETIQUETAS DIETARIAS, ALERGENOS Y NIVEL DE PICANTE
+==========================================================================================
+
+Problema original:
+No existia clasificacion verificable por ingredientes.
+
+Solucion:
+Tags y alergenos son enums. Tags del taco = interseccion de todos los ingredientes; alergenos =
+union; picante = maximo. El cliente no puede imponer esos valores. Se muestran en catalogo, detalle
+y quote.
+
+Contrato:
+Metadata academica; no sustituye controles de contaminacion cruzada. El endpoint classification
+incluye ese aviso.
+
+Pruebas:
+BusinessRulesTest#classificationIntersectsTagsUnionsAllergensAndUsesMaximumSpice
+TransactionalChallengesIT#queryFiltersPagingAndDailySelectionAreStable
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/DesignService.java business/CatalogService.java; domain: Ingredient.java Taco.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+GET /api/v1/tacos/{id}/classification
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 18 - TC-18: TACO PHYSICS: REGLAS COMPONIBLES DE DISENO
+==========================================================================================
+
+Problema original:
+Cualquier combinacion podia guardarse o cotizarse.
+
+Solucion:
+Una lista inyectada de DesignRule devuelve violaciones con codigo y mensaje. Se exige una tortilla,
+2..12 ingredientes, sin duplicados y disponibles. Dos reglas configurables: picante alto requiere
+bebida y peticion vegana exige ingredientes veganos. Se deduplican consultas y se ordenan
+violaciones.
+
+Contrato:
+422 con todas las violaciones; validacion previa a persistencia y reserva. Crear y cotizar usan el
+mismo DesignService.
+
+Pruebas:
+BusinessRulesTest#rulesAccumulateAndCanBeExtended+configuredHotAndVeganRulesApply+quantityBoundsFail
+BeforeIngredientLookup
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/DesignRule.java business/DesignRules.java business/DesignService.java
+business/DesignValidationException.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+POST /api/v1/tacos/validate
+{"name":"Taco prueba","ingredientIds":["COTO","TMTO"],"beverage":false,"vegan":true}
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 19 - TC-19: BUSCAR, FILTRAR, ORDENAR Y PAGINAR TACOS
+==========================================================================================
+
+Problema original:
+La UI usaba una ruta errada y el catalogo no se paginaba.
+
+Solucion:
+CatalogService aplica filtros en Mongo por texto escapado, ingrediente, dieta, alergeno excluido y
+picante. Valida page/size y lista blanca de sort. El ID desempata siempre. La UI usa /api/v1/tacos y
+controles de busqueda/paginacion.
+
+Contrato:
+Pagina con content, page, size y totalElements; size maximo 100; sort por createdAt, name o
+spiceLevel; recent conserva array de hasta 12.
+
+Pruebas:
+TransactionalChallengesIT#queryFiltersPagingAndDailySelectionAreStable
+TacoControllerTest
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/CatalogService.java web/api/TacoController.java; UI: recents/recents.component.ts
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+GET /api/v1/tacos?name=taco&diet=VEGAN&page=0&size=12&sort=name,asc
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 20 - TC-20: TACO DEL DIA DETERMINISTA Y COMPROBABLE
+==========================================================================================
+
+Problema original:
+No existia una seleccion diaria reproducible.
+
+Solucion:
+Se consultan candidatos publicados, ordenados por ID; se resuelven ingredientes actuales y se
+descartan invalidos. El indice deriva del dia de Clock en la zona configurada. No se crea otro taco
+ni se conserva cache obsoleta.
+
+Contrato:
+200 con taco, fecha y explicacion; 404 sin candidatos. Mismo catalogo y fecha producen la misma
+seleccion.
+
+Pruebas:
+TransactionalChallengesIT#queryFiltersPagingAndDailySelectionAreStable
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/CatalogService.java business/BusinessConfig.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+GET /api/v1/tacos/today
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 21 - TC-21: FAVORITOS POR USUARIO SIN CONFIAR EN USERID DEL CLIENTE
+==========================================================================================
+
+Problema original:
+No habia favoritos privados ni proteccion contra duplicados.
+
+Solucion:
+SocialService obtiene usuario autenticado y comprueba taco publicado. Upsert con indice unico
+userId+tacoId; DELETE idempotente; GET paginado. Los favoritos huerfanos encontrados al leer se
+eliminan. La UI recarga el estado desde el servidor.
+
+Contrato:
+PUT/DELETE 204; taco inexistente 404; un usuario no ve favoritos ajenos.
+
+Pruebas:
+TransactionalChallengesIT#favoritesAndRatingsAreIdempotentAndPrivate
+RuntimeMvcIT#browserCanSignInAddDesignedTacoAndSubmitQuantityTwo
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/SocialService.java business/PersistenceConfig.java web/api/AccountController.java; domain:
+Favorite.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+PUT /api/v1/users/me/favorites/{tacoId}; GET /api/v1/users/me/favorites
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 22 - TC-22: CALIFICACIONES Y RANKING DE TACOS
+==========================================================================================
+
+Problema original:
+No existia voto unico ni ranking consistente.
+
+Solucion:
+PUT hace upsert del voto propio (1..5) bajo indice unico. Una agregacion Mongo calcula promedio a
+dos decimales, cantidad y distribucion. Ranking requiere minimo configurable de votos; desempata por
+cantidad y luego ID.
+
+Contrato:
+204 al votar; 400 fuera de rango; 404 taco ausente/no publicado; voto anonimo rechazado.
+
+Pruebas:
+TransactionalChallengesIT#favoritesAndRatingsAreIdempotentAndPrivate
+RuntimeMvcIT
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/SocialService.java web/api/TacoController.java; domain: TacoRating.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+PUT /api/v1/tacos/{id}/rating
+{"score":5}
+GET /api/v1/tacos/top?limit=10
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 23 - TC-23: HISTORIAL PAGINADO Y PRIVADO DE ORDENES
+==========================================================================================
+
+Problema original:
+USER podia acceder a una lista global de ordenes.
+
+Solucion:
+Historial y detalle viven bajo /users/me y filtran en Mongo por usuario autenticado. Orden placedAt
+DESC, ID ASC, pagina limitada. ADMIN dispone de ruta separada con filtros de estado y usuario.
+
+Contrato:
+200 solo datos propios; 403 detalle ajeno; pagina fuera de rango vacia con metadata; respuesta sin
+User ni token.
+
+Pruebas:
+TransactionalChallengesIT#historyIsPrivateAndReorderUsesCurrentPriceAndIdempotentKey
+RuntimeMvcIT#fullOrderOutboxBrokerRedeliveryAndSafeContract
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+web/api/AccountController.java business/OrderApplicationService.java business/PersistenceConfig.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+GET /api/v1/users/me/orders?page=0&size=20; GET /api/v1/admin/orders?status=CREATED
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 24 - TC-24: REORDENAR UNA COMPRA ANTERIOR CON REGLAS ACTUALES
+==========================================================================================
+
+Problema original:
+Clonar una orden podia reutilizar identidad o precios obsoletos.
+
+Solucion:
+Reorder genera una compra nueva pasando por reglas, precios, cupon e inventario actuales. Exige pago
+propio seleccionado y ownership de la original. Si cambia el total, devuelve quote y solicita
+confirmacion. ReorderRecord hace idempotente la clave del usuario.
+
+Contrato:
+201 compra nueva; 409 PRICE_CHANGED_CONFIRM_REQUIRED con quote; reintento devuelve la misma; la
+original permanece intacta.
+
+Pruebas:
+TransactionalChallengesIT#historyIsPrivateAndReorderUsesCurrentPriceAndIdempotentKey
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/OrderApplicationService.java business/PriceChangedException.java; domain:
+ReorderRecord.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+POST /api/v1/orders/{id}/reorder; Idempotency-Key: reorder-demo-001
+{"paymentMethodId":"...","confirmPriceChange":true}
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 25 - TC-25: FLUJO DE ESTADOS DE UNA ORDEN
+==========================================================================================
+
+Problema original:
+El estado podia modificarse sin reglas ni historial.
+
+Solucion:
+WorkflowService centraliza CREATED->ACCEPTED->PREPARING->READY->OUT_FOR_DELIVERY->DELIVERED.
+CANCELLED solo desde CREATED/ACCEPTED. Registra origen, actor, fecha Clock y motivo. Usa version
+optimista y outbox.
+
+Contrato:
+USER solo cancela una orden propia antes de preparacion. KITCHEN/ADMIN avanzan. Repetir estado sin
+version obsoleta no repite efectos; version obsoleta o salto invalido: 409.
+
+Pruebas:
+BusinessRulesTest#entireWorkflowMatrixIsExplicit
+TransactionalChallengesIT#cancellationReleasesOnceAndForbiddenTransitionDoesNotWrite+staleStatusVers
+ionAndFifoClaimAreEnforced
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/WorkflowService.java; domain: TacoOrder.java StatusChange.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+PATCH /api/v1/kitchen/orders/{id}/status
+{"status":"PREPARING","version":2,"reason":"Inicio preparacion"}
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 26 - TC-26: COLA DE COCINA, CLAIM ATOMICO Y TIEMPO ESTIMADO
+==========================================================================================
+
+Problema original:
+Cocina no tenia una cola FIFO ni claim protegido.
+
+Solucion:
+KitchenService usa findAndModify condicionado a CREATED y orden placedAt/ID. Asigna cookId/stationId
+desde autenticacion y usa StationSlot para impedir dos trabajos activos por estacion. Reintenta
+conflictos transitorios; libera estacion en READY/CANCELLED.
+ETA=base+porItem*cantidad+complejidad/4+porEspera*cola.
+
+Contrato:
+Solo KITCHEN; 200 claim; 404 cola vacia; 409 estacion ocupada. DTO de cocina sin direccion ni pago.
+kitchen.html permite ver, reclamar y avanzar.
+
+Pruebas:
+TransactionalChallengesIT#kitchenClaimIsAtomicAndStationCannotClaimTwice+staleStatusVersionAndFifoCl
+aimAreEnforced
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/KitchenService.java business/StationSlot.java web/api/OperationsController.java; runtime:
+static/kitchen.html
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+GET /api/v1/kitchen/queue; POST /api/v1/kitchen/orders/claim
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 27 - TC-27: CONTRATO UNICO DE EVENTOS DE ORDEN
+==========================================================================================
+
+Problema original:
+Los transportes tenian copias del contrato y serializaban dominio.
+
+Solucion:
+tacocloud-messaging-contract define OrderEvent, tipo, payload y puerto CompletionStage. EventFactory
+genera UUID, version 1, fecha, correlacion y snapshot minimo de cocina. Se retiraron copias de
+interfaces/configuraciones y dominio duplicado en kitchen.
+
+Contrato:
+Contrato sin dependencias de Spring/Mongo/brokers. V1 acepta campos adicionales; cambios
+incompatibles requieren nueva version. Sin usuario, direccion ni pago.
+
+Pruebas:
+EmailAndContractTest#responseAndEventNeverSerializeSensitiveFieldsAndV1AcceptsExtensions
+TransportTest
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/EventFactory.java; messaging-contract: OrderEvent.java OrderEventPayload.java
+OrderEventType.java OrderMessagingService.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+Evento: eventId, eventType, version, occurredAt, correlationId, payload(orderId,status,orderVersion,items).
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 28 - TC-28: ELEGIR BROKER EN RUNTIME, NO EDITANDO EL POM
+==========================================================================================
+
+Problema original:
+Cambiar de broker exigia editar dependencias y habia clases con el mismo nombre.
+
+Solucion:
+Todos los adaptadores compilan con el contrato comun. ConditionalOnProperty activa uno entre
+noop/jms/rabbit/kafka; TransportGuard falla si falta, es desconocido o hay mas de uno. Destino y
+conexion se configuran por entorno.
+
+Contrato:
+Noop permitido solo en dev/test. Produccion exige seleccion real. JMS y Kafka tienen pruebas de
+seleccion; Rabbit cuenta con prueba completa de envio/consumo.
+
+Pruebas:
+TransportTest#exactlyOneAdapterForEveryTransport+invalidValueAndProductionNoopFail
+RuntimeMvcIT
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/TransportGuard.java; messaging-noop, messaging-jms, messaging-rabbitmq, messaging-kafka
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+TACO_TRANSPORT=rabbit; RABBIT_HOST, RABBIT_PORT, RABBIT_USER, RABBIT_PASSWORD; TACO_DESTINATION.
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 29 - TC-29: OUTBOX TRANSACCIONAL PARA NO PERDER ORDENES
+==========================================================================================
+
+Problema original:
+Una orden podia guardarse sin evento, o publicarse sin orden.
+
+Solucion:
+ReactiveMongoTransactionManager coordina reserva, orden y outbox en replica set. El publisher
+reclama atomicamente con token y lease; espera confirmacion, marca PUBLISHED o reprograma backoff
+exponencial. Lease vencido permite recuperacion; maximo agotado deja FAILED visible.
+
+Contrato:
+Estados NEW/PUBLISHING/PUBLISHED/FAILED. Maximo 8 por defecto; lease 60 s; envio timeout 20 s;
+backoff hasta 300 s. Entrega al menos una vez.
+
+Pruebas:
+TransactionalChallengesIT#transactionRollsBackPartialStockAndOrderOnFailure+outboxRetriesThenPublish
+esAndClaimsAreExclusive+expiredClaimResumesAndConsumerDeduplicatesDurably
+RuntimeMvcIT
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/PersistenceConfig.java business/OutboxService.java business/OutboxPublisher.java
+business/OutboxEvent.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+Tras compra, outbox contiene ORDER_CREATED; si el broker cae, se conserva para reintento.
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 30 - TC-30: CONSUMIDOR IDEMPOTENTE, RETRY LIMITADO Y DLQ
+==========================================================================================
+
+Problema original:
+Redelivery repetia negocio y los errores podian reintentarse indefinidamente.
+
+Solucion:
+IdempotentEventConsumer guarda ProcessedEvent y KitchenTicket en una transaccion; eventId unico
+evita repetir el efecto. Ignora snapshots anteriores. Rabbit confirma solo despues del commit;
+reintenta exclusivamente errores transitorios. DLQ guarda resumen seguro, causa y correlacion, sin
+reenviar cuerpos invalidos. ADMIN puede hacer replay del evento valido conservado.
+
+Contrato:
+Version/tipo/metadatos invalidos: error permanente, sin retry. Maximo de retries configurable; DLQ
+persistente y confirmada antes del ack original; replay conserva eventId.
+
+Pruebas:
+RabbitRetryTest
+TransactionalChallengesIT#expiredClaimResumesAndConsumerDeduplicatesDurably
+RuntimeMvcIT#fullOrderOutboxBrokerRedeliveryAndSafeContract+rabbitPermanentMessageGoesToSanitizedDlq
+WithCorrelation
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/IdempotentEventConsumer.java business/RabbitConsumerConfig.java
+business/DeadLetterService.java web/api/ReplayController.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+GET /api/v1/admin/dead-letters; POST /api/v1/admin/dead-letters/{id}/replay
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 31 - TC-31: CORRELATION ID DE HTTP A EVENTO Y LOGS
+==========================================================================================
+
+Problema original:
+No habia identificador comun entre HTTP y procesos asincronos.
+
+Solucion:
+CorrelationFilter conserva X-Correlation-Id ASCII valido (1..64); genera UUID si falta o es
+invalido. Lo devuelve y limpia MDC en finally. ReactiveCorrelation captura el contexto antes del
+salto asincrono; OutboxService lo obtiene de Reactor Context y registra el mismo ID. Brokers y DLQ
+lo propagan.
+
+Contrato:
+No se usa orderId como correlacion. No se registran cuerpos sensibles ni IDs como tags metricos.
+
+Pruebas:
+CorrelationAndIdempotencyTest
+TransactionalChallengesIT#correlationCrossesReactiveThreadAndRemainsInOutbox
+RuntimeMvcIT
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+security: Correlation.java CorrelationFilter.java; business/ReactiveCorrelation.java
+business/OutboxService.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+X-Correlation-Id: exposicion-001; comprobar respuesta, log y evento con el mismo valor.
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 32 - TC-32: METRICAS Y SALUD QUE EXPLICAN EL NEGOCIO
+==========================================================================================
+
+Problema original:
+Las metricas no explicaban compras, inventario o backlog y habia block en info.
+
+Solucion:
+BusinessMetrics registra creaciones/cupones/cancelaciones despues del commit y evita contar replay.
+Mide placement y tiempo de cocina; errores y rechazos de stock tienen counters. OperationalSnapshot
+actualiza gauges sin block. Health incluye Mongo, outbox y broker Rabbit; readiness/liveness y
+detalles protegidos. Se retiraron salud aleatoria, lista Notes y contador bloqueante.
+
+Contrato:
+Actuator metrics solo ADMIN; salud publica sin detalles. Tags limitados a
+result/transport/status/source. Outbox FAILED degrada salud con causa segura.
+
+Pruebas:
+TransactionalChallengesIT#businessMetricsCountCommitsNotReplaysAndGaugeAndHealthReflectStorage
+RuntimeMvcIT
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/BusinessMetrics.java business/OperationalSnapshot.java business/OutboxHealth.java
+business/RabbitConsumerConfig.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+GET /actuator/health/readiness; GET /actuator/metrics/tacocloud.orders.created (ADMIN).
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 33 - TC-33: REEMPLAZAR NOTES POR ANUNCIOS OPERATIVOS SEGUROS
+==========================================================================================
+
+Problema original:
+Notes usaba indices de una lista en memoria y perdia datos al reiniciar.
+
+Solucion:
+Announcement persiste UUID, texto, severidad, createdAt/expiresAt, autor y activo. Se limita a 500
+caracteres, 10 activos y vencimiento hasta 30 dias. Un bloqueo documental dentro de la transaccion
+serializa el limite concurrente. Lectura excluye vencidos; limpieza periodica los elimina.
+
+Contrato:
+GET publico sin autor; POST/DELETE solo ADMIN. 400/422 texto/fecha invalida; 409 limite; 404 ID
+inexistente.
+
+Pruebas:
+TransactionalChallengesIT#announcementsPersistExpireAndEnforceConcurrentActiveLimit
+RuntimeMvcIT#announcementsUseValidatedDurableIdsAndPrivateAuthors
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/Announcement.java business/AnnouncementService.java web/api/AnnouncementController.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+POST /api/v1/admin/announcements
+{"text":"Cocina abierta","severity":"INFO","expiresAt":"FECHA_FUTURA_ISO"}
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 34 - TC-34: IDEMPOTENCY-KEY EN CREACION DE ORDENES
+==========================================================================================
+
+Problema original:
+Reintentar POST podia crear varias compras y descontar stock varias veces.
+
+Solucion:
+IdempotentOrders exige key ASCII de 8..100, acotada por usuario. Hash SHA-256 de DTO canonico
+(propiedades ordenadas, cupon normalizado). Guarda registro IN_PROGRESS, orden, reserva, outbox y
+respuesta COMPLETED en la misma transaccion; carreras reintentan y leen la respuesta durable.
+
+Contrato:
+Misma key/body: mismo 201 y snapshot; body distinto: 409. Retencion minima 168 horas por defecto
+mediante TTL. Un rollback no deja IN_PROGRESS ni consume key. Tras purga TTL una key puede iniciar
+nueva operacion.
+
+Pruebas:
+TransactionalChallengesIT#httpIdempotencyIsScopedCanonicalConcurrentAndAtomic+failedIdempotentPlacem
+entRollsBackItsKeyAndCanBeRetried
+CorrelationAndIdempotencyTest
+RuntimeMvcIT
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+business/IdempotentOrders.java business/IdempotencyRecord.java business/TransactionRetry.java
+business/PersistenceConfig.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+POST /api/v1/orders; Idempotency-Key: compra-demo-0001. Repetir exactamente el cuerpo.
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 35 - TC-35: VERSIONAR LA API Y PUBLICAR CONTRATO OPENAPI
+==========================================================================================
+
+Problema original:
+No existia version ni contrato verificable de la API.
+
+Solucion:
+Controladores publican /api/v1 y conservan /api. El alias responde Deprecation:true y Link al
+contrato; no se fija una fecha de retiro. openapi.yaml documenta operaciones, schemas DTO, seguridad
+Basic/sesion, CSRF, correlacion, idempotencia y errores. UI usa v1.
+
+Contrato:
+Swagger Parser valida el spec en Maven. JSON Schema valida respuestas reales de orden y ApiProblem;
+campos inesperados o tipo incompatible fallan.
+
+Pruebas:
+OpenApiContractTest
+CorrelationAndIdempotencyTest#legacyAliasAdvertisesDeprecation
+RuntimeMvcIT
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+web/api/*Controller.java; resources/static/openapi.yaml; security: CorrelationFilter.java
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+GET /openapi.yaml; comparar GET /api/ingredients y /api/v1/ingredients.
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+TAREA 36 - TC-36: SUITE DE INTEGRACION QUE DETENGA REGRESIONES REALES
+==========================================================================================
+
+Problema original:
+Las pruebas dependian del equipo, omitian seguridad o no ejercitaban persistencia.
+
+Solucion:
+La suite combina JUnit/StepVerifier, MockMvc, Mongo replica set y RabbitMQ en Testcontainers,
+runtime MVC RANDOM_PORT con WebTestClient y Chrome con Playwright. Comprueba contratos reales,
+fallos, concurrencia, rollback, redelivery y compra UI con quantity 2. CI ejecuta clean verify y
+valida reportes XML, sin permitir suites criticas ausentes ni tests omitidos.
+
+Contrato:
+Mongo 7.0.15, RabbitMQ 3.13.7, Testcontainers 1.21.4; Spring Boot 2.5.3/Spring 5.3.39; bytecode Java
+11 compilado y probado con JDK 21. No se usa Mongo/broker local en las pruebas.
+
+Pruebas:
+Todas las suites citadas en TC-01..TC-35
+ver resumen de ejecucion al final.
+
+Archivos de esta tarea (rutas relativas a la carpeta de trabajo):
+api/src/test/java; runtime/src/test/java/tacos/RuntimeMvcIT.java; scripts/verificar-retos.sh
+scripts/verificar-reportes.py .github/workflows/retos.yml
+
+Comando para ejecutar las pruebas de esta tarea y sus regresiones:
+bash scripts/verificar-retos.sh
+
+Ejemplo HTTP de esta tarea:
+bash scripts/verificar-retos.sh
+
+Resultado y pendientes de esta tarea:
+Implementado. Estado de verificacion consolidado en el resumen final de este documento.
+
+==========================================================================================
+RUTAS DE ARCHIVOS Y PRUEBAS
+==========================================================================================
+
+Las rutas cortas business/, web/api/ y api/dto/ corresponden a:
+tacocloud/tacocloud-api/src/main/java/tacos/
+security: tacocloud/tacocloud-security/src/main/java/tacos/security/
+domain: tacocloud/tacocloud-domain-mongodb/src/main/java/tacos/
+runtime: tacocloud/tacocloud/src/main/
+UI: tacocloud/tacocloud-ui/src/app/
+messaging-contract: tacocloud/tacocloud-messaging-contract/src/main/java/tacos/messaging/
+scripts/migrate-payment.js: tacocloud/scripts/migrate-payment.js
+Pruebas API: tacocloud/tacocloud-api/src/test/java/tacos/
+Pruebas runtime: tacocloud/tacocloud/src/test/java/tacos/RuntimeMvcIT.java
+
+EJECUCION DESDE LA TERMINAL DE VISUAL STUDIO CODE
+
+cd /home/torres/NTT/Microservicios-NTTData
+bash scripts/levantar-tacocloud.sh
+
+Aplicacion: http://localhost:8080/ui/home
+Registro e inicio de sesion: http://localhost:8080/ui/login
+Cocina: http://localhost:8080/kitchen.html
+Contrato: http://localhost:8080/openapi.yaml
+RabbitMQ: http://localhost:15678
+
+La primera ejecucion genera .runtime/lab.env con claves locales aleatorias.
+No se guardan claves reales en Git. admin y kitchen usan TACO_LAB_PASSWORD.
+Para tu cuenta USER usa Register en la pagina. Contrasena minima: 10 caracteres.
+Mongo usa el puerto 27036 y replica set tc36; Rabbit usa 5678.
+Los datos de este laboratorio estan en volumenes dedicados. La base antigua de
+work/tc30/mongo-data y su puerto 27028 no se borran ni se sobrescriben.
+
+Para bajar:
+bash scripts/bajar-tacocloud.sh
+Se detiene la aplicacion y los dos contenedores; se conservan los volumenes.
+
+Para verificar todos los retos:
+bash scripts/verificar-retos.sh
+Requiere Docker disponible y Google Chrome; TACO_BROWSER_EXECUTABLE permite
+indicar otra ruta de Chrome. Las pruebas crean sus propios Mongo y Rabbit.
+
+POSTMAN Y AUTENTICACION
+
+Importar postman/TacoCloud-36-Retos.postman_collection.json.
+Ejecutar primero CSRF para obtener token y cookie; Postman conserva cookies.
+Cada POST/PUT/PATCH/DELETE envia X-XSRF-TOKEN y la cookie XSRF-TOKEN.
+Basic Auth y sesiones requieren CSRF. No se desactiva por comodidad.
+Iniciar sesion con la cuenta que corresponda; USER, ADMIN y KITCHEN tienen
+permisos distintos. En Postman usar variables adminPassword y kitchenPassword
+con la clave local, sin exportarla ni subirla al repositorio.
+
+METRICAS Y SALUD
+
+Counters: tacocloud.orders.created, tacocloud.orders.failed,
+tacocloud.orders.cancelled, tacocloud.coupons.applied,
+tacocloud.stock.rejected, tacocloud.events.dlq.
+Timers: tacocloud.orders.placement y tacocloud.kitchen.latency (segundos en Actuator).
+Gauges: tacocloud.outbox.pending, tacocloud.outbox.failed,
+tacocloud.kitchen.queue y tacocloud.dlq.pending.
+Snapshots asincronos cada 5 segundos; no consultan Mongo al leer el gauge.
+Salud publica: /actuator/health, /actuator/health/readiness y /actuator/health/liveness.
+Los detalles y /actuator/metrics requieren ADMIN.
+
+REPLAY CONTROLADO
+
+ADMIN consulta /api/v1/admin/dead-letters. Copia el ID de una entrada replayable.
+POST /api/v1/admin/dead-letters/{id}/replay aplica el evento valido con el mismo
+eventId. Repetirlo devuelve applied:false si ya estaba procesado. Mensajes con
+JSON/version invalidos no son replayables; se corrige su origen. No se reenvia
+el cuerpo invalido ni se intenta convertir texto sensible en un evento valido.
+
+RESUMEN FINAL DE VERIFICACION
+
+VERIFICADO AL 100%: los 36 retos quedan implementados y verificados.
+
+La verificacion se repitio durante esta revision contra el estado actual del codigo; no se
+mantienen pendientes funcionales detectables por la suite critica.
+
+Ejecucion realizada el 2026-09-29 desde la raiz del proyecto:
+
+	bash scripts/verificar-retos.sh
+
+Resultado de la ejecucion completa:
+
+- Maven clean verify: BUILD SUCCESS.
+- 68 pruebas verificadas.
+- 0 fallos.
+- 0 errores.
+- 0 pruebas omitidas.
+- 11 suites criticas presentes y ejecutadas.
+- MongoDB real mediante Testcontainers y replica set.
+- RabbitMQ real mediante Testcontainers.
+- Pruebas de reintento, redelivery, deduplicacion, DLQ y recuperacion tras caida del broker.
+- Prueba MVC HTTP con registro, autenticacion, carrito, favoritos y compra con quantity 2.
+- Validacion de contrato OpenAPI, seguridad, CSRF, idempotencia, correlacion y migracion de pagos.
+- Validacion automatica de los reportes XML mediante scripts/verificar-reportes.py.
+
+Suites criticas verificadas:
+
+FunctionalChallengesTest, BusinessRulesTest, EmailAndContractTest,
+SecurityAndRegistrationTest, TransportTest, CorrelationAndIdempotencyTest,
+OpenApiContractTest, RabbitRetryTest, IngredientMongoIT,
+TransactionalChallengesIT y RuntimeMvcIT.

@@ -14,9 +14,10 @@ export class DesignComponent implements OnInit {
 
   model = {
     name: '',
-    ingredients: []
+    ingredients: [], beverage: false, vegan: false
   };
 
+  error = '';
   allIngredients: any;
   wraps = [];
   proteins = [];
@@ -29,7 +30,7 @@ export class DesignComponent implements OnInit {
 
   // tag::ngOnInit[]
   ngOnInit() {
-    this.httpClient.get('http://localhost:8080/api/ingredients')
+    this.httpClient.get('/api/v1/ingredients')
         .subscribe(data => {
           this.allIngredients = data;
           this.wraps = this.allIngredients.filter(w => w.type === 'WRAP');
@@ -52,12 +53,10 @@ export class DesignComponent implements OnInit {
   // tag::onSubmit[]
   onSubmit() {
     this.httpClient.post(
-        'http://localhost:8080/api/tacos',
-        this.model, {
+        '/api/v1/tacos',
+        {name: this.model.name, ingredientIds: this.model.ingredients.map(i => i.id), beverage: this.model.beverage, vegan: this.model.vegan}, {
             headers: new HttpHeaders().set('Content-type', 'application/json'),
-        }).subscribe(taco => this.cart.addToCart(taco));
-
-    this.router.navigate(['/cart']);
+        }).subscribe(taco => {this.cart.addToCart(taco); this.router.navigate(['/cart']);}, e => this.error = (e.error.violations || []).map(v => v.reason).join('; ') || e.error.code);
   }
   // end::onSubmit[]
 

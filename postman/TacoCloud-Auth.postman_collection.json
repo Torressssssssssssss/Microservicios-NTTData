@@ -1,0 +1,92 @@
+{
+  "info": {
+    "_postman_id": "6db10e54-bb6b-4fa7-92b3-4c2ee42beac1",
+    "name": "TacoCloud Auth",
+    "description": "Pruebas de registro, inicio de sesion y sesion HTTP para TacoCloud.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.collectionVariables.get('testUsername')) {",
+          "  const suffix = Date.now();",
+          "  pm.collectionVariables.set('testUsername', 'postman_user_' + suffix);",
+          "  pm.collectionVariables.set('testEmail', 'postman_user_' + suffix + '@example.test');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {"key": "baseUrl", "value": "http://localhost:8080"},
+    {"key": "testUsername", "value": ""},
+    {"key": "testEmail", "value": ""},
+    {"key": "testPassword", "value": "postman-pass-123"}
+  ],
+  "item": [
+    {
+      "name": "1 Register",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{testUsername}}\",\n  \"password\": \"{{testPassword}}\",\n  \"email\": \"{{testEmail}}\",\n  \"fullname\": \"Postman Test\"\n}"
+        },
+        "url": "{{baseUrl}}/api/auth/register"
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+        "pm.test('Registro creado', () => pm.response.to.have.status(201));",
+        "pm.test('No expone password', () => pm.expect(pm.response.text()).not.to.include('password'));"
+      ]}}]
+    },
+    {
+      "name": "2 Sign In",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"username\": \"{{testUsername}}\",\n  \"password\": \"{{testPassword}}\"\n}"},
+        "url": "{{baseUrl}}/api/auth/login"
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+        "pm.test('Credenciales aceptadas', () => pm.response.to.have.status(200));",
+        "pm.test('Rol de usuario presente', () => pm.expect(pm.response.json().roles).to.include('ROLE_USER'));"
+      ]}}]
+    },
+    {
+      "name": "3 Current Session",
+      "request": {"method": "GET", "url": "{{baseUrl}}/api/auth/me"},
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+        "pm.test('Sesion conservada', () => pm.response.to.have.status(200));",
+        "pm.test('Usuario correcto', () => pm.expect(pm.response.json().username).to.eql(pm.collectionVariables.get('testUsername')));"
+      ]}}]
+    },
+    {
+      "name": "4 Invalid Sign In",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"username\": \"{{testUsername}}\",\n  \"password\": \"incorrect-password\"\n}"},
+        "url": "{{baseUrl}}/api/auth/login"
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+        "pm.test('Credenciales invalidas rechazadas', () => pm.response.to.have.status(401));"
+      ]}}]
+    },
+    {
+      "name": "5 Duplicate Register",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"username\": \"{{testUsername}}\",\n  \"password\": \"{{testPassword}}\",\n  \"email\": \"{{testEmail}}\"\n}"},
+        "url": "{{baseUrl}}/api/auth/register"
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": [
+        "pm.test('Duplicado rechazado', () => pm.response.to.have.status(409));"
+      ]}}]
+    }
+  ]
+}

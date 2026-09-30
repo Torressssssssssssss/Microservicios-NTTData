@@ -22,13 +22,21 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <!-- end::bootAdminVersion[] -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <java.version>25</java.version>
+
   <!-- tag::bootAdminVersion[] -->
-    <spring-boot-admin.version>3.5.6</spring-boot-admin.version>
+    <spring-boot-admin.version>2.4.3</spring-boot-admin.version>
   </properties>
   <!-- end::bootAdminVersion[] -->
 
   <dependencies>
+<dependency><groupId>org.awaitility</groupId><artifactId>awaitility</artifactId><version>4.2.2</version><scope>test</scope></dependency>
+    <dependency><groupId>org.testcontainers</groupId><artifactId>mongodb</artifactId><version>1.21.4</version><scope>test</scope></dependency>
+    <dependency><groupId>org.testcontainers</groupId><artifactId>rabbitmq</artifactId><version>1.21.4</version><scope>test</scope></dependency>
+    <dependency><groupId>io.projectreactor</groupId><artifactId>reactor-test</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>com.microsoft.playwright</groupId><artifactId>playwright</artifactId><version>1.48.0</version><scope>test</scope></dependency>
+
+    <dependency><groupId>io.swagger.parser.v3</groupId><artifactId>swagger-parser</artifactId><version>2.0.26</version><scope>test</scope></dependency>
+    <dependency><groupId>com.networknt</groupId><artifactId>json-schema-validator</artifactId><version>1.0.76</version><scope>test</scope></dependency>
     <!-- TacoCloud dependencies -->
     <dependency>
       <groupId>sia</groupId>
@@ -93,20 +101,18 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <dependency>
       <groupId>org.seleniumhq.selenium</groupId>
       <artifactId>selenium-java</artifactId>
-      <version>4.49.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.seleniumhq.selenium</groupId>
       <artifactId>htmlunit-driver</artifactId>
-      <version>4.13.0</version>
       <scope>test</scope>
     </dependency>
 
     <dependency>
       <groupId>io.github.bonigarcia</groupId>
       <artifactId>webdrivermanager</artifactId>
-      <version>6.1.0</version>
+      <version>5.8.0</version>
       <scope>test</scope>
     </dependency>
 
@@ -157,4 +163,8 @@ http://maven.apache.org/xsd/maven-4.0.0.xsd">
     </dependencies>
   </dependencyManagement>
   <!-- end::bootAdminDependencyManagement[] -->
-</project>
+<profiles><profile><id>integration</id><build><plugins><plugin>
+    <groupId>org.apache.maven.plugins</groupId><artifactId>maven-failsafe-plugin</artifactId>
+    <configuration><environmentVariables><PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD>1</PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD></environmentVariables></configuration>
+    <executions><execution><goals><goal>integration-test</goal><goal>verify</goal></goals></execution></executions>
+    </plugin></plugins></build></profile></profiles></project>

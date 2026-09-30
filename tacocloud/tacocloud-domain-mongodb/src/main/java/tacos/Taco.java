@@ -3,8 +3,8 @@ package tacos;
 import java.util.Date;
 import java.util.List;
 
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -22,7 +22,14 @@ public class Taco {
   
   @NotNull
   @Size(min = 5, message = "Name must be at least 5 characters long")
+  @org.springframework.data.mongodb.core.index.Indexed
   private String name;
+  private java.util.Set<Ingredient.DietaryTag> dietaryTags = new java.util.HashSet<>();
+  private java.util.Set<Ingredient.Allergen> allergens = new java.util.HashSet<>();
+  private int spiceLevel;
+  private boolean published = true;
+  private boolean beverage;
+  private boolean veganRequested;
   
   private Date createdAt = new Date();
   

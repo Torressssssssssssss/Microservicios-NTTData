@@ -3,10 +3,16 @@ Material de la capacitación de Microservicios — NTT Data
 
 ## Requisitos
 
-- Java 25 LTS
-- Maven 3.9.9 o superior
+- JDK 11 o posterior para compilar bytecode Java 11
+- Maven 3.8 o posterior
+- Docker disponible para las pruebas de integracion
+- Node.js y npm para el modulo Angular
 
-## Documentacion
+## Verificacion y documentacion
 
-- [Documentacion tecnica de TacoCloud](documentacion.md)
-- [Manual tecnico de TacoCloud](Manual_Tecnico_TacoCloud.docx)
+```bash
+bash scripts/verificar-retos.sh
+```
+
+- [Verificacion de los 36 retos](documentacion.md)
+- [Documentacion detallada por tarea](documentacion.txt)

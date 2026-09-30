@@ -1,105 +1,65 @@
-security:
-  user:
-    name: buzz
-    password: infinity
-
-taco:
-  api:
-    allowed-origin: http://localhost:8080
-  orders:
-    pageSize: 10
-
-
-  discount:
-    codes:
-      abcdef: 10
-
-
-
-#logging:
-#  level:
-#    org.springframework.data.rest: debug
-
-# tag::springBootAdminCreds[]
-# tag::springBootAdminUri[]
 spring:
-# end::springBootAdminUri[]
-# end::springBootAdminCreds[]
-  application:
-    name: taco-cloud
+  profiles:
+    default: dev
   data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/tacocloud?replicaSet=rs0}
     rest:
       base-path: /data-api
-    cassandra:
-      keyspace-name: tacocloud
-      schema-action: recreate
-# tag::springBootAdminCreds[]
-# tag::springBootAdminUri[]
+  rabbitmq:
+    host: ${RABBIT_HOST:localhost}
+    port: ${RABBIT_PORT:5672}
+    username: ${RABBIT_USER:guest}
+    password: ${RABBIT_PASSWORD:guest}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+  artemis:
+    mode: native
+    broker-url: ${JMS_URL:tcp://localhost:61616}
+    user: ${JMS_USER:}
+    password: ${JMS_PASSWORD:}
   boot:
     admin:
       client:
-        url: http://localhost:9090
-# end::springBootAdminUri[]
-        username: admin
-        password: 53cr3t
-# end::springBootAdminCreds[]
-
-# The values given here are actually the default values. But they are explicitly
-# set here as an example of setting the Kafka properties.
-  kafka:
-    bootstrap-servers:
-    - localhost:9092
-    template:
-      default-topic: tacocloud.orders.topic
-    producer:
-      keySerializer: org.springframework.kafka.support.serializer.JsonSerializer
-      valueSerializer: org.springframework.kafka.support.serializer.JsonSerializer
-  jmx:
-    enabled: true
-
-#tag::exposeAll[]
-#tag::excludeSome[]
-#tag::healthShowDetails[]
-#tag::infoGitModeFull[]
+        enabled: false
 management:
-#end::infoGitModeFull[]
-#end::healthShowDetails[]
+  health:
+    rabbit:
+      enabled: false
+    jms:
+      enabled: false
   endpoints:
     web:
       exposure:
-        include: '*'
-#end::exposeAll[]
-        exclude: threaddump,heapdump
-#end::excludeSome[]
-#tag::healthShowDetails[]
+        include: health,info,metrics
   endpoint:
     health:
-      show-details: always
-#end::healthShowDetails[]
-#tag::infoGitModeFull[]
-  info:
-    git:
-      mode: full
-#end::infoGitModeFull[]
-
-#tag::contactInfo[]
-info:
-  contact:
-    email: support@tacocloud.com
-    phone: 822-625-6831
-#end::contactInfo[]
-
----
-spring:
-  config:
-    activate:
-      on-profile: prod
-
-  datasource:
-    url: jdbc:mysql://localhost/tacocloud
-    username: tacouser
-    password: tacopassword
-
-logging:
-  level:
-    tacos: WARN
+      show-details: when-authorized
+      roles: ADMIN
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,mongo,outbox
+taco:
+  api:
+    allowed-origin: ${TACO_ALLOWED_ORIGIN:http://localhost:8080}
+tacocloud:
+  messaging:
+    transport: ${TACO_TRANSPORT:noop}
+    destination: ${TACO_DESTINATION:tacocloud.orders}
+  time-zone: America/Mexico_City
+  max-quantity: 50
+  max-page-size: 100
+  rating:
+    minimum-votes: 2
+  coupons:
+    codes: {}
